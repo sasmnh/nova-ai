@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<title>Nova</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #08090d;
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+}
+
+.app {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    padding: 55px 20px 15px;
+    border-bottom: 1px solid #24252b;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 30px;
+}
+
+header p {
+    margin: 5px 0 0;
+    color: #8e8e93;
+}
+
+#messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.message {
+    max-width: 85%;
+    padding: 13px 16px;
+    margin-bottom: 12px;
+    border-radius: 20px;
+    line-height: 1.4;
+}
+
+.nova {
+    background: #202127;
+}
+
+.user {
+    background: #315efb;
+    margin-left: auto;
+}
+
+.input-area {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    padding-bottom: 25px;
+    border-top: 1px solid #24252b;
+}
+
+input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: #1b1c21;
+    color: white;
+    padding: 15px;
+    border-radius: 22px;
+    font-size: 16px;
+}
+
+button {
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 50%;
+    background: #315efb;
+    color: white;
+    font-size: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+    <h1>Nova</h1>
+    <p>Ton assistant personnel</p>
+</header>
+
+<main id="messages">
+
+<div class="message nova">
+    Bonjour 👋<br>
+    Je suis Nova. Comment puis-je t'aider ?
+</div>
+
+</main>
+
+<div class="input-area">
+
+<input
+    id="input"
+    type="text"
+    placeholder="Écris à Nova..."
+>
+
+<button onclick="sendMessage()">↑</button>
+
+</div>
+
+</div>
+
+<script>
+
+function sendMessage() {
+
+    const input = document.getElementById("input");
+    const messages = document.getElementById("messages");
+
+    const text = input.value.trim();
+
+    if (text === "") return;
+
+    const userMessage = document.createElement("div");
+
+    userMessage.className = "message user";
+    userMessage.textContent = text;
+
+    messages.appendChild(userMessage);
+
+    input.value = "";
+
+    setTimeout(() => {
+
+        const novaMessage = document.createElement("div");
+
+        novaMessage.className = "message nova";
+
+        novaMessage.textContent =
+            "Je suis encore en construction 🧠";
+
+        messages.appendChild(novaMessage);
+
+        messages.scrollTop = messages.scrollHeight;
+
+    }, 500);
+}
+
+</script>
+
+</body>
+</html>
