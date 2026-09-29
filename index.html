@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <title>Nova</title>
 
@@ -17,7 +16,7 @@ body {
     margin: 0;
     background: #08090d;
     color: white;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .app {
@@ -39,6 +38,12 @@ header h1 {
 header p {
     margin: 5px 0 0;
     color: #8e8e93;
+}
+
+#status {
+    padding: 10px 20px;
+    color: #8e8e93;
+    font-size: 14px;
 }
 
 #messages {
@@ -104,11 +109,15 @@ button {
     <p>Ton assistant personnel</p>
 </header>
 
+<div id="status">
+    🧠 Préparation de Nova...
+</div>
+
 <main id="messages">
 
 <div class="message nova">
     Bonjour 👋<br>
-    Je suis Nova. Comment puis-je t'aider ?
+    Je prépare mon cerveau...
 </div>
 
 </main>
@@ -119,7 +128,7 @@ button {
     id="input"
     type="text"
     placeholder="Écris à Nova..."
->
+/>
 
 <button onclick="sendMessage()">↑</button>
 
@@ -127,41 +136,148 @@ button {
 
 </div>
 
-<script>
+<script type="module">
 
-function sendMessage() {
+import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
-    const input = document.getElementById("input");
-    const messages = document.getElementById("messages");
+let engine = null;
+
+const MODEL = "Llama-3.1-8B-Instruct-q4f32_1-MLC";
+
+const status = document.getElementById("status");
+const messages = document.getElementById("messages");
+const input = document.getElementById("input");
+
+function addMessage(text, type) {
+
+    const message = document.createElement("div");
+
+    message.className = "message " + type;
+
+    message.textContent = text;
+
+    messages.appendChild(message);
+
+    messages.scrollTop = messages.scrollHeight;
+}
+
+async function startNova() {
+
+    try {
+
+        status.textContent = "🧠 Téléchargement du cerveau de Nova...";
+
+        engine = await webllm.CreateMLCEngine(
+            MODEL,
+            {
+                initProgressCallback: (progress) => {
+
+                    status.textContent =
+                        "🧠 " + progress.text;
+                }
+            }
+        );
+
+        status.textContent = "✅ Nova est prête !";
+
+        messages.innerHTML = "";
+
+        addMessage(
+            "Bonjour 👋 Je suis Nova. Mon cerveau est maintenant chargé. Que veux-tu faire ?",
+            "nova"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "❌ Impossible de charger le modèle.";
+
+        addMessage(
+            "Je n'arrive pas encore à charger mon cerveau sur cet appareil.",
+            "nova"
+        );
+    }
+}
+
+async function sendMessage() {
 
     const text = input.value.trim();
 
-    if (text === "") return;
+    if (!text) return;
 
-    const userMessage = document.createElement("div");
+    if (!engine) {
 
-    userMessage.className = "message user";
-    userMessage.textContent = text;
+        addMessage(
+            "⏳ Mon cerveau est encore en train de se charger.",
+            "nova"
+        );
 
-    messages.appendChild(userMessage);
+        return;
+    }
+
+    addMessage(text, "user");
 
     input.value = "";
 
-    setTimeout(() => {
+    addMessage("💭 Je réfléchis...", "nova");
 
-        const novaMessage = document.createElement("div");
+    const thinkingMessage =
+        messages.lastElementChild;
 
-        novaMessage.className = "message nova";
+    try {
 
-        novaMessage.textContent =
-            "Je suis encore en construction 🧠";
+        const response =
+            await engine.chat.completions.create({
 
-        messages.appendChild(novaMessage);
+                messages: [
 
-        messages.scrollTop = messages.scrollHeight;
+                    {
+                        role: "system",
+                        content:
+                        "Tu es Nova, une assistante IA personnelle. Tu réponds en français, de manière claire, naturelle et sympathique."
+                    },
 
-    }, 500);
+                    {
+                        role: "user",
+                        content: text
+                    }
+
+                ],
+
+                temperature: 0.7,
+
+                max_tokens: 300
+            });
+
+        thinkingMessage.textContent =
+            response.choices[0].message.content;
+
+    } catch (error) {
+
+        console.error(error);
+
+        thinkingMessage.textContent =
+            "Une erreur est survenue pendant ma réflexion.";
+
+    }
+
+    messages.scrollTop =
+        messages.scrollHeight;
 }
+
+input.addEventListener("keydown", function(event) {
+
+    if (event.key === "Enter") {
+
+        sendMessage();
+
+    }
+
+});
+
+startNova();
 
 </script>
 
