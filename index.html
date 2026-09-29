@@ -26,6 +26,9 @@ body {
 header {
     padding: 55px 20px 15px;
     border-bottom: 1px solid #24252b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 h1 {
@@ -36,6 +39,15 @@ h1 {
 .subtitle {
     color: #8e8e93;
     margin-top: 5px;
+}
+
+#clearMemory {
+    background: #202127;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 8px 12px;
+    font-size: 12px;
 }
 
 #status {
@@ -96,6 +108,11 @@ button {
     color: white;
     font-size: 20px;
 }
+
+#clearMemory {
+    width: auto;
+    height: auto;
+}
 </style>
 </head>
 
@@ -104,38 +121,74 @@ button {
 <div class="app">
 
 <header>
-    <h1>Nova 🧠</h1>
-    <div class="subtitle">Ton assistant personnel</div>
+
+    <div>
+        <h1>Nova 🧠</h1>
+        <div class="subtitle">Ton assistant personnel</div>
+    </div>
+
+    <button id="clearMemory">
+        🗑️
+    </button>
+
 </header>
 
 <div id="status">
     ⏳ Préparation de Nova...
 </div>
 
-<main id="messages">
-    <div class="message nova">
-        Je prépare mon cerveau...
-    </div>
-</main>
+<main id="messages"></main>
 
 <div class="input-area">
-    <input id="input" type="text"
-           placeholder="Écris à Nova..." disabled>
 
-    <button id="send" disabled>↑</button>
+    <input
+        id="input"
+        type="text"
+        placeholder="Écris à Nova..."
+        disabled
+    >
+
+    <button id="send" disabled>
+        ↑
+    </button>
+
 </div>
 
 </div>
+
 
 <script type="module">
 
 import * as webllm from
 "https://esm.run/@mlc-ai/web-llm";
 
+
+/* =========================
+   MODÈLE
+========================= */
+
 const MODEL =
 "Llama-3.2-1B-Instruct-q4f16_1-MLC";
 
 let engine = null;
+
+
+/* =========================
+   MÉMOIRE
+========================= */
+
+const MEMORY_KEY =
+"nova_memory";
+
+let conversation =
+JSON.parse(
+    localStorage.getItem(MEMORY_KEY) || "[]"
+);
+
+
+/* =========================
+   ÉLÉMENTS
+========================= */
 
 const status =
 document.getElementById("status");
@@ -149,6 +202,13 @@ document.getElementById("input");
 const send =
 document.getElementById("send");
 
+const clearMemory =
+document.getElementById("clearMemory");
+
+
+/* =========================
+   AFFICHER UN MESSAGE
+========================= */
 
 function addMessage(text, type) {
 
@@ -158,7 +218,8 @@ function addMessage(text, type) {
     message.className =
     "message " + type;
 
-    message.textContent = text;
+    message.textContent =
+    text;
 
     messages.appendChild(message);
 
@@ -166,6 +227,71 @@ function addMessage(text, type) {
     messages.scrollHeight;
 }
 
+
+/* =========================
+   RESTAURER LA MÉMOIRE
+========================= */
+
+function loadConversation() {
+
+    messages.innerHTML = "";
+
+    if (conversation.length === 0) {
+
+        addMessage(
+            "Bonjour 👋 Je suis Nova ! Que veux-tu me demander ?",
+            "nova"
+        );
+
+        return;
+    }
+
+    conversation.forEach(
+        (message) => {
+
+            if (
+                message.role === "user"
+            ) {
+
+                addMessage(
+                    message.content,
+                    "user"
+                );
+
+            }
+
+            if (
+                message.role === "assistant"
+            ) {
+
+                addMessage(
+                    message.content,
+                    "nova"
+                );
+
+            }
+
+        }
+    );
+}
+
+
+/* =========================
+   SAUVEGARDER LA MÉMOIRE
+========================= */
+
+function saveMemory() {
+
+    localStorage.setItem(
+        MEMORY_KEY,
+        JSON.stringify(conversation)
+    );
+}
+
+
+/* =========================
+   DÉMARRER NOVA
+========================= */
 
 async function startNova() {
 
@@ -183,60 +309,106 @@ async function startNova() {
 
                     status.textContent =
                     "🧠 " + progress.text;
+
                 }
             }
         );
 
+
         status.textContent =
         "✅ Nova est prête !";
 
+
         input.disabled = false;
+
         send.disabled = false;
 
-        messages.innerHTML = "";
 
-        addMessage(
-            "Bonjour 👋 Je suis Nova ! Que veux-tu me demander ?",
-            "nova"
-        );
+        loadConversation();
+
 
     } catch (error) {
 
         console.error(error);
 
+
         status.textContent =
         "❌ Impossible de charger le modèle.";
+
 
         addMessage(
             "Le modèle n'a pas pu être chargé sur cet appareil.",
             "nova"
         );
+
     }
 }
 
+
+/* =========================
+   ENVOYER UN MESSAGE
+========================= */
 
 async function sendMessage() {
 
     const text =
     input.value.trim();
 
+
     if (!text || !engine)
         return;
 
-    addMessage(text, "user");
+
+    addMessage(
+        text,
+        "user"
+    );
+
 
     input.value = "";
+
 
     const thinking =
     document.createElement("div");
 
+
     thinking.className =
     "message nova";
+
 
     thinking.textContent =
     "💭 Je réfléchis...";
 
-    messages.appendChild(thinking);
+
+    messages.appendChild(
+        thinking
+    );
+
+
+    /* Ajouter le message
+       de l'utilisateur */
+
+    conversation.push({
+
+        role: "user",
+
+        content: text
+
+    });
+
+
+    /* Garder seulement
+       les 40 derniers messages */
+
+    if (
+        conversation.length > 40
+    ) {
+
+        conversation =
+        conversation.slice(-40);
+
+    }
+
 
     try {
 
@@ -245,38 +417,125 @@ async function sendMessage() {
 
             messages: [
 
-                {
-                    role: "system",
-                    content:
-                    "Tu es Nova, une assistante IA personnelle...
-                },
+                /* =====================
+                   PERSONNALITÉ DE NOVA
+                ===================== */
 
                 {
-                    role: "user",
-                    content: text
-                }
+                    role: "system",
+
+                    content:
+                    "Tu es Nova, une IA drôle, chaleureuse, spontanée et pleine de personnalité. Tu parles principalement en français avec un style naturel inspiré du français parlé en Afrique francophone : expressions familières, petites touches d’humour, réactions spontanées et langage vivant, sans caricaturer un accent ni utiliser de stéréotypes. Tu peux taquiner gentiment quand le contexte s’y prête. Tu restes intelligente, respectueuse et utile. Tu adaptes ton langage à la personne et tu évites de parler de façon trop robotique ou trop formelle."
+                },
+
+
+                /* =====================
+                   MÉMOIRE
+                ===================== */
+
+                ...conversation
 
             ],
 
-            temperature: 0.7,
+
+            temperature: 0.8,
+
             max_tokens: 300
+
         });
 
+
+        const answer =
+        response.choices[0]
+        .message
+        .content;
+
+
         thinking.textContent =
-        response.choices[0].message.content;
+        answer;
+
+
+        /* Ajouter la réponse
+           de Nova à la mémoire */
+
+        conversation.push({
+
+            role: "assistant",
+
+            content: answer
+
+        });
+
+
+        /* Sauvegarder */
+
+        saveMemory();
+
 
     } catch (error) {
 
         console.error(error);
 
+
         thinking.textContent =
         "Une erreur est survenue.";
+
+
+        /* Retirer le message
+           utilisateur si erreur */
+
+        conversation.pop();
+
     }
+
 
     messages.scrollTop =
     messages.scrollHeight;
+
 }
 
+
+/* =========================
+   EFFACER LA MÉMOIRE
+========================= */
+
+clearMemory.addEventListener(
+    "click",
+    () => {
+
+        const confirmDelete =
+        confirm(
+            "Effacer toute la mémoire de Nova ?"
+        );
+
+
+        if (!confirmDelete)
+            return;
+
+
+        conversation = [];
+
+
+        localStorage.removeItem(
+            MEMORY_KEY
+        );
+
+
+        messages.innerHTML = "";
+
+
+        addMessage(
+            "Mémoire effacée 🧠✨",
+            "nova"
+        );
+
+    }
+);
+
+
+/* =========================
+   BOUTON ENVOYER
+========================= */
 
 send.addEventListener(
     "click",
@@ -284,17 +543,29 @@ send.addEventListener(
 );
 
 
+/* =========================
+   TOUCHE ENTRÉE
+========================= */
+
 input.addEventListener(
     "keydown",
     (event) => {
 
-        if (event.key === "Enter") {
+        if (
+            event.key === "Enter"
+        ) {
+
             sendMessage();
+
         }
 
     }
 );
 
+
+/* =========================
+   LANCER NOVA
+========================= */
 
 startNova();
 
