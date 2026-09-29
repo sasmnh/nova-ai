@@ -3,21 +3,304 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Test Nova</title>
+<title>Nova 🧠</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #08090d;
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.app {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    padding: 55px 20px 15px;
+    border-bottom: 1px solid #24252b;
+}
+
+h1 {
+    margin: 0;
+    font-size: 30px;
+}
+
+.subtitle {
+    color: #8e8e93;
+    margin-top: 5px;
+}
+
+#status {
+    padding: 10px 20px;
+    color: #8e8e93;
+    font-size: 13px;
+}
+
+#messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.message {
+    max-width: 85%;
+    padding: 13px 16px;
+    margin-bottom: 12px;
+    border-radius: 20px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+}
+
+.nova {
+    background: #202127;
+}
+
+.user {
+    background: #315efb;
+    margin-left: auto;
+}
+
+.input-area {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    padding-bottom: 25px;
+    border-top: 1px solid #24252b;
+}
+
+input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: #1b1c21;
+    color: white;
+    padding: 15px;
+    border-radius: 22px;
+    font-size: 16px;
+}
+
+button {
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 50%;
+    background: #315efb;
+    color: white;
+    font-size: 20px;
+}
+</style>
 </head>
 
 <body>
 
-<h1>Nova 🧠</h1>
+<div class="app">
 
-<p id="status">Chargement de WebLLM...</p>
+<header>
+    <h1>Nova 🧠</h1>
+    <div class="subtitle">Ton assistant personnel</div>
+</header>
+
+<div id="status">
+    ⏳ Préparation de Nova...
+</div>
+
+<main id="messages">
+    <div class="message nova">
+        Je prépare mon cerveau...
+    </div>
+</main>
+
+<div class="input-area">
+    <input
+        id="input"
+        type="text"
+        placeholder="Écris à Nova..."
+        disabled
+    >
+    <button id="send" disabled>↑</button>
+</div>
+
+</div>
 
 <script type="module">
 
-import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+import * as webllm from
+"https://esm.run/@mlc-ai/web-llm";
 
-document.getElementById("status").textContent =
-"✅ WebLLM est chargé !";
+const MODEL =
+"Llama-3.2-3B-Instruct-q4f16_1-MLC";
+
+let engine = null;
+
+const status =
+document.getElementById("status");
+
+const messages =
+document.getElementById("messages");
+
+const input =
+document.getElementById("input");
+
+const send =
+document.getElementById("send");
+
+
+function addMessage(text, type) {
+
+    const message =
+    document.createElement("div");
+
+    message.className =
+    "message " + type;
+
+    message.textContent = text;
+
+    messages.appendChild(message);
+
+    messages.scrollTop =
+    messages.scrollHeight;
+}
+
+
+async function startNova() {
+
+    try {
+
+        status.textContent =
+        "🧠 Téléchargement du cerveau de Nova...";
+
+        engine =
+        await webllm.CreateMLCEngine(
+            MODEL,
+            {
+                initProgressCallback:
+                (progress) => {
+
+                    status.textContent =
+                    "🧠 " + progress.text;
+                }
+            }
+        );
+
+        status.textContent =
+        "✅ Nova est prête !";
+
+        input.disabled = false;
+        send.disabled = false;
+
+        messages.innerHTML = "";
+
+        addMessage(
+            "Bonjour 👋 Je suis Nova ! Que veux-tu me demander ?",
+            "nova"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+        "❌ Impossible de charger le modèle.";
+
+        addMessage(
+            "Le modèle n'a pas pu être chargé sur cet appareil.",
+            "nova"
+        );
+    }
+}
+
+
+async function sendMessage() {
+
+    const text =
+    input.value.trim();
+
+    if (!text || !engine)
+        return;
+
+    addMessage(text, "user");
+
+    input.value = "";
+
+    const thinking =
+    document.createElement("div");
+
+    thinking.className =
+    "message nova";
+
+    thinking.textContent =
+    "💭 Je réfléchis...";
+
+    messages.appendChild(thinking);
+
+    try {
+
+        const response =
+        await engine.chat.completions.create({
+
+            messages: [
+
+                {
+                    role: "system",
+                    content:
+                    "Tu es Nova, une assistante IA personnelle. Tu réponds en français, de façon claire, naturelle, utile et sympathique."
+                },
+
+                {
+                    role: "user",
+                    content: text
+                }
+
+            ],
+
+            temperature: 0.7,
+            max_tokens: 300
+        });
+
+        thinking.textContent =
+        response.choices[0].message.content;
+
+    } catch (error) {
+
+        console.error(error);
+
+        thinking.textContent =
+        "Une erreur est survenue.";
+
+    }
+
+    messages.scrollTop =
+    messages.scrollHeight;
+}
+
+
+send.addEventListener(
+    "click",
+    sendMessage
+);
+
+
+input.addEventListener(
+    "keydown",
+    (event) => {
+
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+
+    }
+);
+
+
+startNova();
 
 </script>
 
