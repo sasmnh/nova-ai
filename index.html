@@ -119,12 +119,9 @@ button {
 </main>
 
 <div class="input-area">
-    <input
-        id="input"
-        type="text"
-        placeholder="Écris à Nova..."
-        disabled
-    >
+    <input id="input" type="text"
+           placeholder="Écris à Nova..." disabled>
+
     <button id="send" disabled>↑</button>
 </div>
 
@@ -274,7 +271,6 @@ async function sendMessage() {
 
         thinking.textContent =
         "Une erreur est survenue.";
-
     }
 
     messages.scrollTop =
