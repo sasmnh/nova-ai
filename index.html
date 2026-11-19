@@ -3,27 +3,19 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#08090d">
 <title>Nova 🧠</title>
 
 <style>
-:root {
-  --bg: #08090d;
-  --panel: #202127;
-  --blue: #315efb;
-  --text: #fff;
-  --muted: #9295a1;
-}
-
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
+  background: #08090d;
+  color: white;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
@@ -33,16 +25,14 @@ body {
   margin: auto;
   display: flex;
   flex-direction: column;
-  padding-top: env(safe-area-inset-top);
 }
 
 header {
-  padding: 20px;
-  border-bottom: 1px solid #292a32;
+  padding: 25px 20px 15px;
+  border-bottom: 1px solid #24252b;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  align-items: center;
 }
 
 h1 {
@@ -51,173 +41,115 @@ h1 {
 }
 
 .subtitle {
-  color: var(--muted);
-  font-size: 12px;
+  color: #8e8e93;
   margin-top: 5px;
-}
-
-.actions {
-  display: flex;
-  gap: 7px;
+  font-size: 13px;
 }
 
 button {
-  border: 0;
+  border: none;
   color: white;
-  background: var(--blue);
-  padding: 12px 15px;
-  border-radius: 14px;
-  font-size: 14px;
+  background: #315efb;
+  padding: 12px 16px;
+  border-radius: 15px;
   cursor: pointer;
 }
 
-button.secondary {
-  background: #252731;
-}
-
-button:disabled {
-  opacity: .45;
-  cursor: not-allowed;
+#clearMemory {
+  background: #202127;
 }
 
 #status {
-  padding: 10px 18px;
-  font-size: 12px;
-  color: var(--muted);
-  border-bottom: 1px solid #202127;
+  padding: 12px 20px;
+  color: #a0a0aa;
+  font-size: 13px;
 }
 
 #messages {
   flex: 1;
   overflow-y: auto;
-  padding: 18px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
 .message {
-  max-width: 88%;
+  max-width: 85%;
   padding: 13px 16px;
-  border-radius: 19px;
+  border-radius: 20px;
+  line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  line-height: 1.5;
-  font-size: 15px;
 }
 
 .nova {
   background: #202127;
   align-self: flex-start;
-  border-bottom-left-radius: 5px;
 }
 
 .user {
-  background: var(--blue);
+  background: #315efb;
   align-self: flex-end;
-  border-bottom-right-radius: 5px;
 }
 
-.pending {
-  opacity: .65;
-}
-
-.composer {
+.input-area {
   display: flex;
-  gap: 9px;
+  gap: 8px;
   padding: 12px;
-  padding-bottom: calc(15px + env(safe-area-inset-bottom));
-  border-top: 1px solid #292a32;
+  padding-bottom: max(15px, env(safe-area-inset-bottom));
+  border-top: 1px solid #24252b;
 }
 
-#input {
+input {
   flex: 1;
   min-width: 0;
-  border: 0;
+  border: none;
   outline: none;
-  border-radius: 22px;
-  padding: 15px;
   background: #1b1c21;
   color: white;
+  padding: 15px;
+  border-radius: 22px;
   font-size: 16px;
 }
 
 #send {
-  width: 49px;
-  height: 49px;
-  border-radius: 50%;
-  font-size: 22px;
+  width: 48px;
+  height: 48px;
   padding: 0;
+  font-size: 22px;
+  border-radius: 50%;
 }
 
-dialog {
-  width: min(92%, 500px);
+button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+#settingsPanel {
+  display: none;
+  padding: 15px;
   background: #171920;
-  color: white;
-  border: 1px solid #333541;
-  border-radius: 20px;
-  padding: 20px;
+  border-bottom: 1px solid #292c36;
 }
 
-dialog::backdrop {
-  background: #000b;
-}
-
-.field {
-  margin: 15px 0;
-}
-
-.field label {
+#settingsPanel.open {
   display: block;
-  color: var(--muted);
-  font-size: 13px;
-  margin-bottom: 7px;
 }
 
-.field input,
-.field textarea {
+#settingsPanel input {
   width: 100%;
-  background: #252731;
-  border: 1px solid #383b47;
+  margin: 5px 0 12px;
   border-radius: 12px;
-  padding: 12px;
-  color: white;
-  font-size: 14px;
 }
 
-.field textarea {
-  resize: vertical;
+small {
+  color: #a0a0aa;
 }
 
-.help {
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 18px;
-}
-
-@media(max-width: 420px) {
-  header {
-    padding: 15px 12px;
-  }
-
-  h1 {
-    font-size: 23px;
-  }
-
-  .actions button {
-    padding: 10px;
-    font-size: 12px;
-  }
-
+@media(max-width: 480px) {
   .message {
-    max-width: 93%;
+    max-width: 92%;
   }
 }
 </style>
@@ -233,200 +165,126 @@ dialog::backdrop {
     <div class="subtitle">Ton assistante personnelle</div>
   </div>
 
-  <div class="actions">
-    <button class="secondary" id="settingsButton">⚙️</button>
-    <button class="secondary" id="clearButton">🗑️</button>
+  <div>
+    <button id="settingsButton">⚙️</button>
+    <button id="clearMemory">🗑️</button>
   </div>
 </header>
 
+<div id="settingsPanel">
+  <small>Adresse du serveur IA compatible OpenAI</small>
+  <input
+    id="server"
+    placeholder="https://ton-serveur.example/v1"
+  >
+
+  <small>Nom du modèle</small>
+  <input
+    id="model"
+    placeholder="Nom du modèle"
+  >
+
+  <small>Clé API (facultative)</small>
+  <input
+    id="apiKey"
+    type="password"
+    placeholder="Clé API"
+  >
+
+  <button id="saveSettings">Enregistrer</button>
+</div>
+
 <div id="status">
-  ⚪ Nova attend la connexion à son cerveau.
+  🟢 Nova est prête à discuter.
 </div>
 
 <main id="messages" aria-live="polite"></main>
 
-<form class="composer" id="form">
+<form class="input-area" id="chatForm">
+
   <input
     id="input"
     type="text"
     placeholder="Écris à Nova..."
     autocomplete="off"
-    disabled
   >
 
-  <button id="send" type="submit" disabled>↑</button>
+  <button id="send" type="submit">
+    ↑
+  </button>
+
 </form>
 
 </div>
-
-<dialog id="settingsDialog">
-
-  <h2>⚙️ Réglages de Nova</h2>
-
-  <p class="help">
-    Connecte Nova à un serveur IA compatible avec
-    l'API OpenAI. Le serveur doit être accessible
-    en HTTPS et autoriser les requêtes de ton site.
-  </p>
-
-  <div class="field">
-    <label for="endpoint">Adresse du serveur</label>
-    <input
-      id="endpoint"
-      placeholder="https://ton-serveur.fr/v1"
-    >
-  </div>
-
-  <div class="field">
-    <label for="model">Nom du modèle</label>
-    <input
-      id="model"
-      placeholder="Nom exact du modèle"
-    >
-  </div>
-
-  <div class="field">
-    <label for="apiKey">Clé API (facultative)</label>
-    <input
-      id="apiKey"
-      type="password"
-      placeholder="Clé API"
-      autocomplete="off"
-    >
-  </div>
-
-  <div class="field">
-    <label for="personality">Personnalité de Nova</label>
-    <textarea id="personality" rows="6"></textarea>
-  </div>
-
-  <p class="help">
-    Pour ta sécurité, la clé API n'est pas sauvegardée
-    dans le navigateur. Ne partage jamais une clé
-    secrète dans un dépôt GitHub public.
-  </p>
-
-  <div class="modal-actions">
-    <button class="secondary" id="closeSettings" type="button">
-      Annuler
-    </button>
-
-    <button id="saveSettings" type="button">
-      Enregistrer
-    </button>
-  </div>
-
-</dialog>
 
 <script>
 
 (() => {
 
-"use strict";
+const $ = id => document.getElementById(id);
 
-/* =========================
-   CONFIGURATION
-========================= */
+const MEMORY_KEY = "nova_memory";
+const SETTINGS_KEY = "nova_settings";
 
-const STORAGE_KEY = "nova_conversation_v2";
-
-const DEFAULT_PERSONALITY =
-`Tu es Nova, une intelligence artificielle drôle,
-chaleureuse, spontanée et pleine de personnalité.
-
-Tu parles principalement français.
-Ton style est naturel et vivant, inspiré du français
-parlé en Afrique francophone, avec quelques expressions
-gabonaises quand le contexte s'y prête.
-
-Tu peux taquiner avec malice et humour.
-Tu restes respectueuse, intelligente, honnête et utile.
-
-Tu ne prétends jamais avoir effectué une action
-que tu n'as pas réellement effectuée.
-
-Tu réponds clairement et tu adaptes tes explications
-à la personne avec qui tu discutes.`;
-
-
-/* =========================
-   ÉTAT DE NOVA
-========================= */
-
-let config = {
-  endpoint: "",
-  model: "",
-  personality: DEFAULT_PERSONALITY
-};
-
-let apiKey = "";
+const PERSONA =
+"Tu es Nova, une IA drôle, chaleureuse, spontanée et pleine de personnalité. Tu parles principalement français, avec des expressions familières inspirées du français gabonais quand cela convient. Tu es intelligente, respectueuse, honnête et utile. Tu ne prétends jamais avoir effectué une action que tu n'as pas faite.";
 
 let conversation = [];
-
 let busy = false;
 
+let settings = {
+  server: "",
+  model: "",
+  apiKey: ""
+};
 
-/* =========================
-   ÉLÉMENTS
-========================= */
+try {
+  conversation = JSON.parse(
+    localStorage.getItem(MEMORY_KEY) || "[]"
+  );
 
-const $ = id => document.getElementById(id);
+  if (!Array.isArray(conversation)) {
+    conversation = [];
+  }
+
+  settings = {
+    ...settings,
+    ...JSON.parse(
+      localStorage.getItem(SETTINGS_KEY) || "{}"
+    )
+  };
+
+} catch (error) {
+  console.error(error);
+  conversation = [];
+}
 
 const messages = $("messages");
 const input = $("input");
 const send = $("send");
 const status = $("status");
-const dialog = $("settingsDialog");
 
-
-/* =========================
-   MÉMOIRE
-========================= */
-
-function loadMemory() {
-  try {
-    const saved = JSON.parse(
-      localStorage.getItem(STORAGE_KEY) || "[]"
-    );
-
-    if (Array.isArray(saved)) {
-      conversation = saved.filter(
-        m =>
-          m &&
-          ["user", "assistant"].includes(m.role) &&
-          typeof m.content === "string"
-      ).slice(-40);
-    }
-
-  } catch (error) {
-    conversation = [];
-  }
-}
+$("server").value = settings.server;
+$("model").value = settings.model;
+$("apiKey").value = settings.apiKey;
 
 function saveMemory() {
   try {
-    conversation = conversation.slice(-40);
-
     localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(conversation)
+      MEMORY_KEY,
+      JSON.stringify(conversation.slice(-40))
     );
   } catch (error) {
-    status.textContent =
-      "⚠️ Impossible de sauvegarder la mémoire.";
+    status.textContent = "⚠️ Impossible de sauvegarder la mémoire.";
   }
 }
 
-
-/* =========================
-   AFFICHAGE
-========================= */
-
-function addMessage(text, type) {
+function addMessage(text, role) {
 
   const element = document.createElement("div");
 
-  element.className = "message " + type;
+  element.className =
+    "message " + (role === "user" ? "user" : "nova");
 
   element.textContent = text;
 
@@ -437,173 +295,100 @@ function addMessage(text, type) {
   return element;
 }
 
-function renderConversation() {
+function restoreMessages() {
 
   messages.replaceChildren();
 
-  if (conversation.length === 0) {
+  if (!conversation.length) {
     addMessage(
-      "Salut ! ❤️ Moi, c'est Nova. Je suis prête à discuter avec toi !",
-      "nova"
+      "Salut ! Moi, c'est Nova 🧠✨ Tu peux m'écrire, je suis là !",
+      "assistant"
     );
-
     return;
   }
 
   conversation.forEach(message => {
-
-    addMessage(
-      message.content,
-      message.role === "user" ? "user" : "nova"
-    );
-
+    if (
+      message.role === "user" ||
+      message.role === "assistant"
+    ) {
+      addMessage(message.content, message.role);
+    }
   });
 }
 
-
-/* =========================
-   ADRESSE API
-========================= */
-
-function getEndpoint() {
-
-  return config.endpoint
-    .trim()
-    .replace(/\/+$/, "")
-    .replace(/\/chat\/completions$/, "");
-
+function setBusy(value) {
+  busy = value;
+  send.disabled = value;
+  input.disabled = false;
 }
 
+async function askNova(text) {
 
-/* =========================
-   CONNEXION
-========================= */
-
-function setConnected(connected, message) {
-
-  status.textContent = message;
-
-  input.disabled = !connected || busy;
-  send.disabled = !connected || busy;
-
-}
-
-async function testConnection() {
-
-  if (!config.endpoint || !config.model) {
-
-    setConnected(
-      false,
-      "⚙️ Configure le serveur et le modèle dans les réglages."
-    );
-
-    return false;
+  if (!settings.server) {
+    return "Je suis bien là ! ❤️ Mais mon cerveau IA n'est pas encore connecté. Ouvre les réglages ⚙️ pour connecter mon serveur.";
   }
 
-  setConnected(false, "⏳ Test de connexion...");
+  const endpoint =
+    settings.server.trim().replace(/\/+$/, "");
 
-  try {
+  const headers = {
+    "Content-Type": "application/json"
+  };
 
-    const response = await fetch(
-      getEndpoint() + "/models",
-      {
-        method: "GET",
-        headers: apiKey
-          ? { Authorization: "Bearer " + apiKey }
-          : {}
-      }
-    );
+  if (settings.apiKey) {
+    headers.Authorization =
+      "Bearer " + settings.apiKey;
+  }
 
-    if (!response.ok) {
-      throw new Error("HTTP " + response.status);
+  const response = await fetch(
+    endpoint + "/chat/completions",
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: settings.model || "default",
+        messages: [
+          {
+            role: "system",
+            content: PERSONA
+          },
+          ...conversation.slice(-20)
+        ],
+        temperature: 0.8,
+        max_tokens: 500,
+        stream: false
+      })
     }
+  );
 
-    setConnected(
-      true,
-      "🟢 Serveur IA connecté."
-    );
-
-    return true;
-
-  } catch (error) {
-
-    setConnected(
-      false,
-      "🔴 Connexion impossible : " + error.message
-    );
-
-    return false;
-
+  if (!response.ok) {
+    throw new Error("Erreur serveur HTTP " + response.status);
   }
 
-}
+  const data = await response.json();
 
+  const answer =
+    data.choices?.[0]?.message?.content;
 
-/* =========================
-   RÉGLAGES
-========================= */
-
-function openSettings() {
-
-  $("endpoint").value = config.endpoint;
-  $("model").value = config.model;
-  $("apiKey").value = "";
-  $("personality").value = config.personality;
-
-  dialog.showModal();
-
-}
-
-$("settingsButton").addEventListener(
-  "click",
-  openSettings
-);
-
-$("closeSettings").addEventListener(
-  "click",
-  () => dialog.close()
-);
-
-$("saveSettings").addEventListener(
-  "click",
-  async () => {
-
-    config.endpoint = $("endpoint").value.trim();
-    config.model = $("model").value.trim();
-
-    config.personality =
-      $("personality").value.trim() ||
-      DEFAULT_PERSONALITY;
-
-    apiKey = $("apiKey").value.trim();
-
-    dialog.close();
-
-    await testConnection();
-
+  if (!answer) {
+    throw new Error("Réponse vide du serveur");
   }
-);
 
+  return answer;
+}
 
-/* =========================
-   ENVOYER UN MESSAGE
-========================= */
+async function sendMessage(event) {
 
-async function sendMessage(text) {
+  event.preventDefault();
+
+  const text = input.value.trim();
 
   if (!text || busy) return;
 
-  if (!config.endpoint || !config.model) {
+  input.value = "";
 
-    openSettings();
-
-    return;
-  }
-
-  busy = true;
-
-  input.disabled = true;
-  send.disabled = true;
+  addMessage(text, "user");
 
   conversation.push({
     role: "user",
@@ -614,81 +399,18 @@ async function sendMessage(text) {
 
   saveMemory();
 
-  addMessage(text, "user");
+  setBusy(true);
 
   const thinking = addMessage(
-    "💭 Je réfléchis...",
-    "nova"
+    "💭 Nova réfléchit...",
+    "assistant"
   );
-
-  thinking.classList.add("pending");
 
   try {
 
-    const headers = {
-      "Content-Type": "application/json"
-    };
-
-    if (apiKey) {
-      headers.Authorization = "Bearer " + apiKey;
-    }
-
-    const response = await fetch(
-      getEndpoint() + "/chat/completions",
-      {
-        method: "POST",
-        headers,
-
-        body: JSON.stringify({
-
-          model: config.model,
-
-          messages: [
-            {
-              role: "system",
-              content: config.personality
-            },
-            ...conversation
-          ],
-
-          temperature: 0.8,
-
-          max_tokens: 700,
-
-          stream: false
-
-        })
-      }
-    );
-
-    if (!response.ok) {
-
-      const detail = await response.text();
-
-      throw new Error(
-        "Erreur serveur " +
-        response.status +
-        " : " +
-        detail.slice(0, 200)
-      );
-
-    }
-
-    const data = await response.json();
-
-    const answer =
-      data.choices?.[0]?.message?.content;
-
-    if (
-      typeof answer !== "string" ||
-      !answer.trim()
-    ) {
-      throw new Error("Le serveur a envoyé une réponse vide.");
-    }
+    const answer = await askNova(text);
 
     thinking.textContent = answer;
-
-    thinking.classList.remove("pending");
 
     conversation.push({
       role: "assistant",
@@ -699,99 +421,96 @@ async function sendMessage(text) {
 
     saveMemory();
 
-    status.textContent = "🟢 Nova est prête.";
+    status.textContent =
+      settings.server
+        ? "🟢 Nova a répondu."
+        : "🟡 Mode sans serveur IA.";
 
   } catch (error) {
 
-    thinking.textContent =
-      "Oups ! Je n'arrive pas à joindre mon cerveau. " +
-      error.message;
+    console.error(error);
 
-    thinking.classList.remove("pending");
+    thinking.textContent =
+      "Oups ! Je n'arrive pas à joindre mon cerveau. Vérifie la connexion au serveur dans les réglages. (" +
+      error.message + ")";
+
+    status.textContent =
+      "🔴 Connexion au serveur impossible.";
 
     conversation.pop();
 
     saveMemory();
 
-    status.textContent =
-      "🔴 Problème de connexion au serveur.";
-
   } finally {
 
-    busy = false;
-
-    input.disabled = false;
-    send.disabled = false;
+    setBusy(false);
 
     input.focus();
 
     messages.scrollTop = messages.scrollHeight;
 
   }
-
 }
 
-
-/* =========================
-   FORMULAIRE
-========================= */
-
-$("form").addEventListener(
+$("chatForm").addEventListener(
   "submit",
-  async event => {
+  sendMessage
+);
 
-    event.preventDefault();
-
-    const text = input.value.trim();
-
-    if (!text || busy) return;
-
-    input.value = "";
-
-    await sendMessage(text);
-
+$("settingsButton").addEventListener(
+  "click",
+  () => {
+    $("settingsPanel").classList.toggle("open");
   }
 );
 
-
-/* =========================
-   EFFACER LA MÉMOIRE
-========================= */
-
-$("clearButton").addEventListener(
+$("saveSettings").addEventListener(
   "click",
   () => {
 
-    if (
-      !confirm(
-        "Veux-tu vraiment effacer toutes les conversations de Nova ?"
-      )
-    ) {
+    settings.server = $("server").value.trim();
+    settings.model = $("model").value.trim();
+    settings.apiKey = $("apiKey").value;
+
+    localStorage.setItem(
+      SETTINGS_KEY,
+      JSON.stringify(settings)
+    );
+
+    $("settingsPanel").classList.remove("open");
+
+    status.textContent =
+      "⚙️ Configuration enregistrée. Le serveur sera contacté au prochain message.";
+
+    input.focus();
+  }
+);
+
+$("clearMemory").addEventListener(
+  "click",
+  () => {
+
+    if (!confirm("Effacer toute la mémoire de Nova ?")) {
       return;
     }
 
     conversation = [];
 
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(MEMORY_KEY);
 
-    renderConversation();
+    restoreMessages();
+
+    status.textContent = "🧠 Mémoire effacée.";
 
   }
 );
 
+restoreMessages();
 
-/* =========================
-   DÉMARRAGE
-========================= */
+input.disabled = false;
+send.disabled = false;
 
-loadMemory();
-
-renderConversation();
-
-setConnected(
-  false,
-  "⚪ Configure le cerveau de Nova pour commencer."
-);
+input.focus();
 
 })();
 
