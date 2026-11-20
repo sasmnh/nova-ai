@@ -478,7 +478,13 @@ async function loadCloudMemory() {
     setStatus("🔴 Erreur de lecture de la mémoire : " + error.message);
     return;
   }
-
+try {
+  await loadFacts();
+} catch (error) {
+  console.error("Chargement des souvenirs :", error);
+  setStatus("⚠️ Impossible de charger les souvenirs.");
+  return;
+}
   conversation = (data || [])
     .reverse()
     .filter(item =>
