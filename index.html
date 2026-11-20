@@ -373,6 +373,10 @@ async function startApp(){
  if(appStarted)return;
  appStarted=true;
 
+ // Réinitialiser la recherche de l'historique
+ $("chatSearch").value="";
+ renderChatList();
+
  applySavedWallpaper();
 
  $("profileEmail").textContent=user.email||"Compte Nova";
