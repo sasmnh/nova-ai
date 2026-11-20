@@ -16,14 +16,18 @@
 
 <style>
 *{box-sizing:border-box}
-:root{--bg:#08090d;--panel:#11131b;--panel2:#191c26;--border:#292d39;--text:#f5f5f7;--muted:#999eaa;--accent:#8065f5}
+:root{
+ --bg:#08090d;--panel:#11131b;--panel2:#191c26;
+ --border:#292d39;--text:#f5f5f7;--muted:#999eaa;
+ --accent:#8065f5
+}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
 button,input,textarea{font:inherit}
 button{cursor:pointer}
-.hidden{display:none!important}
 button:disabled{opacity:.5;cursor:not-allowed}
+.hidden{display:none!important}
 
-/* AUTH */
+/* CONNEXION */
 .auth-page{min-height:100vh;display:grid;place-items:center;padding:20px}
 .auth-card{width:100%;max-width:390px;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:28px}
 .logo{text-align:center;font-size:42px}
@@ -38,7 +42,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .auth-links{display:flex;justify-content:space-between;gap:10px;margin-top:18px}
 #authMessage{font-size:13px;color:#c5baff;line-height:1.5;margin-top:14px}
 
-/* APP */
+/* APPLICATION */
 .app{height:100dvh;display:flex;overflow:hidden}
 .sidebar{width:270px;flex-shrink:0;background:#10121a;border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px;transition:width .2s,padding .2s;overflow:hidden}
 .sidebar.collapsed{width:0;padding-left:0;padding-right:0;border:0}
@@ -50,15 +54,15 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .nav-btn:hover,.chat-item:hover{background:#20232d}
 .section-label{font-size:11px;color:#777f8e;font-weight:bold;margin:20px 8px 8px}
 .side-list{overflow-y:auto;flex:1;min-height:0}
-.chat-item{display:flex;align-items:center;gap:7px;border-radius:8px;padding:9px 7px;color:#ddd;font-size:13px;cursor:pointer}
+.chat-item{display:flex;align-items:center;gap:7px;border-radius:8px;padding:9px 7px;color:#ddd;font-size:13px}
 .chat-item.active{background:#27243a}
-.chat-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.chat-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;cursor:pointer}
 .delete-chat{border:0;background:none;color:#888;padding:3px}
 .delete-chat:hover{color:#ff7777}
 .side-bottom{border-top:1px solid var(--border);padding-top:10px}
 .user-line{font-size:11px;color:#9ca2af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px}
 
-/* MAIN */
+/* ZONE PRINCIPALE */
 .main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 .topbar{height:60px;flex-shrink:0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px}
 .top-left,.top-right{display:flex;align-items:center;gap:10px}
@@ -80,7 +84,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .send{height:42px;width:44px;border:0;border-radius:11px;background:var(--accent);color:white;font-size:20px}
 .status{text-align:center;font-size:11px;color:#858b98;margin-bottom:8px}
 
-/* PANELS */
+/* PANNEAUX */
 .panel{max-width:800px;margin:0 auto 18px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px}
 .panel h2{font-size:19px;margin-top:0}
 .panel input,.panel textarea{width:100%;padding:11px;border:1px solid var(--border);border-radius:9px;background:#090b11;color:white;margin:7px 0 12px}
@@ -149,14 +153,13 @@ button:disabled{opacity:.5;cursor:not-allowed}
 
 <!-- APPLICATION -->
 <section id="appPage" class="app hidden">
-
  <aside class="sidebar" id="sidebar">
   <div class="side-top">
    <div class="brand">🧠 Nova</div>
-   <button class="side-btn" id="collapseSidebar" title="Réduire">‹</button>
+   <button class="side-btn" id="collapseSidebar">‹</button>
   </div>
 
-  <button class="new-chat" id="newChat"><span>＋</span> Nouveau chat</button>
+  <button class="new-chat" id="newChat">＋ Nouveau chat</button>
   <button class="nav-btn" id="projectsButton">📁 Projets</button>
   <button class="nav-btn" id="memoryButton">🧠 Mémoire</button>
 
@@ -173,7 +176,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
  <div class="main">
   <div class="topbar">
    <div class="top-left">
-    <button id="openSidebar" title="Afficher le menu">☰</button>
+    <button id="openSidebar">☰</button>
     <span class="top-title" id="pageTitle">Nouveau chat</span>
    </div>
    <div class="top-right">
@@ -231,99 +234,182 @@ button:disabled{opacity:.5;cursor:not-allowed}
 </section>
 
 <script>
-const SUPABASE_URL = "https://yvkldxqrgnigxesoxycc.supabase.co";
-const SUPABASE_KEY = "sb_publishable_DwDUh-Le_xR6mJnojXdL5w_QI-00AZT";
-const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+"use strict";
 
-let user = null;
-let chats = [];
-let currentChat = null;
-let messages = [];
-let facts = [];
-let projects = [];
-let busy = false;
+/* CONFIGURATION */
+const SUPABASE_URL="https://yvkldxqrgnigxesoxycc.supabase.co";
+const SUPABASE_KEY="sb_publishable_DwDUh-Le_xR6mJnojXdL5w_QI-00AZT";
 
-const $ = id => document.getElementById(id);
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-function notice(id,text){$(id).textContent=text}
-function normalize(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()}
+let user=null;
+let chats=[];
+let currentChat=null;
+let messages=[];
+let facts=[];
+let projects=[];
+let busy=false;
+let loadedUserId=null;
+let loadingUserId=null;
+
+const $=id=>document.getElementById(id);
+
+function notice(id,message){
+ $(id).textContent=message||"";
+}
+
+function normalize(value){
+ return String(value||"")
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g,"")
+  .toLowerCase()
+  .trim();
+}
 
 function showForm(name){
- ["loginForm","signupForm","resetForm"].forEach(id=>$(id).classList.toggle("hidden",id!==name));
+ ["loginForm","signupForm","resetForm"].forEach(id=>{
+  $(id).classList.toggle("hidden",id!==name);
+ });
  notice("authMessage","");
 }
-$("showSignup").onclick=()=>showForm("signupForm");
-$("showReset").onclick=()=>showForm("resetForm");
-$("backLogin1").onclick=()=>showForm("loginForm");
-$("backLogin2").onclick=()=>showForm("loginForm");
 
 function showApplication(){
  $("authPage").classList.add("hidden");
  $("appPage").classList.remove("hidden");
- $("userEmail").textContent=user.email||"Compte personnel";
- $("emailLabel").textContent=user.email||"";
+ $("userEmail").textContent=user?.email||"Compte personnel";
+ $("emailLabel").textContent=user?.email||"";
 }
+
 function showAuthentication(){
  $("appPage").classList.add("hidden");
  $("authPage").classList.remove("hidden");
 }
 
-/* AUTH */
+$("showSignup").onclick=()=>showForm("signupForm");
+$("showReset").onclick=()=>showForm("resetForm");
+$("backLogin1").onclick=()=>showForm("loginForm");
+$("backLogin2").onclick=()=>showForm("loginForm");
+
+/* INSCRIPTION */
 $("signupButton").onclick=async()=>{
  const email=$("signupEmail").value.trim();
  const password=$("signupPassword").value;
- if(!email||password.length<6)return notice("authMessage","Entre un e-mail valide et un mot de passe d'au moins 6 caractères.");
+
+ if(!email||password.length<6){
+  return notice("authMessage","Entre un e-mail valide et un mot de passe d'au moins 6 caractères.");
+ }
+
  $("signupButton").disabled=true;
- const {data,error}=await db.auth.signUp({email,password});
- $("signupButton").disabled=false;
- if(error)return notice("authMessage",error.message);
- showForm("loginForm");
- notice("authMessage",data.session?"Compte créé !":"Compte créé ! Consulte tes e-mails pour confirmer ton adresse.");
+
+ try{
+  const {data,error}=await db.auth.signUp({email,password});
+  if(error)throw error;
+
+  showForm("loginForm");
+  notice("authMessage",data.session
+   ?"Compte créé !"
+   :"Compte créé ! Consulte tes e-mails pour confirmer ton adresse.");
+ }catch(error){
+  notice("authMessage",error.message);
+ }finally{
+  $("signupButton").disabled=false;
+ }
 };
 
+/* CONNEXION */
 $("loginButton").onclick=async()=>{
  const email=$("loginEmail").value.trim();
  const password=$("loginPassword").value;
- if(!email||!password)return notice("authMessage","Entre ton e-mail et ton mot de passe.");
+
+ if(!email||!password){
+  return notice("authMessage","Entre ton e-mail et ton mot de passe.");
+ }
+
  $("loginButton").disabled=true;
- const {error}=await db.auth.signInWithPassword({email,password});
- $("loginButton").disabled=false;
- if(error)notice("authMessage",error.message);
+
+ try{
+  const {error}=await db.auth.signInWithPassword({email,password});
+  if(error)throw error;
+ }catch(error){
+  notice("authMessage",error.message);
+ }finally{
+  $("loginButton").disabled=false;
+ }
 };
 
+/* MOT DE PASSE OUBLIE */
 $("resetButton").onclick=async()=>{
  const email=$("resetEmail").value.trim();
+
  if(!email)return notice("authMessage","Entre ton adresse e-mail.");
- const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
- notice("authMessage",error?error.message:"Si un compte correspond à cette adresse, un lien sera envoyé.");
+
+ try{
+  const {error}=await db.auth.resetPasswordForEmail(email,{
+   redirectTo:location.origin+location.pathname
+  });
+  if(error)throw error;
+  notice("authMessage","Si un compte correspond à cette adresse, un lien sera envoyé.");
+ }catch(error){
+  notice("authMessage",error.message);
+ }
 };
 
-$("logoutButton").onclick=async()=>{await db.auth.signOut()};
+/* DECONNEXION */
+$("logoutButton").onclick=async()=>{
+ const {error}=await db.auth.signOut();
+ if(error)alert(error.message);
+};
 
-/* AUTH STATE */
-let lastLoadedUser=null;
-db.auth.onAuthStateChange(async(event,session)=>{
- if(session?.user){
-  user=session.user;
-  showApplication();
-  if(lastLoadedUser!==user.id){
-   lastLoadedUser=user.id;
-   await loadAll();
-  }
- }else{
-  user=null;lastLoadedUser=null;
-  chats=[];messages=[];facts=[];projects=[];currentChat=null;
+/* SESSION ET CHARGEMENT */
+async function handleSession(session){
+ const nextUser=session?.user||null;
+
+ if(!nextUser){
+  user=null;
+  loadedUserId=null;
+  loadingUserId=null;
+  chats=[];
+  messages=[];
+  facts=[];
+  projects=[];
+  currentChat=null;
   $("chatList").innerHTML="";
   $("messages").innerHTML="";
   showAuthentication();
+  return;
  }
+
+ user=nextUser;
+ showApplication();
+
+ if(loadedUserId===user.id||loadingUserId===user.id)return;
+
+ loadingUserId=user.id;
+
+ try{
+  await loadAll();
+  loadedUserId=user.id;
+ }catch(error){
+  console.error("Chargement :",error);
+  alert("Impossible de charger tes données : "+error.message);
+ }finally{
+  loadingUserId=null;
+ }
+}
+
+db.auth.onAuthStateChange((event,session)=>{
+ void handleSession(session);
 });
 
-/* SETTINGS */
+/* PARAMETRES */
 function settings(){
- try{return JSON.parse(localStorage.getItem("nova_settings"))||{}}
- catch(e){return {}}
+ try{
+  return JSON.parse(localStorage.getItem("nova_settings"))||{};
+ }catch(error){
+  return {};
+ }
 }
+
 $("settingsButton").onclick=()=>{
  closePanels();
  const s=settings();
@@ -333,6 +419,7 @@ $("settingsButton").onclick=()=>{
  $("settingsPanel").classList.remove("hidden");
  $("pageTitle").textContent="Paramètres";
 };
+
 $("saveSettings").onclick=()=>{
  localStorage.setItem("nova_settings",JSON.stringify({
   server:$("serverInput").value.trim(),
@@ -341,172 +428,326 @@ $("saveSettings").onclick=()=>{
  }));
  alert("Réglages enregistrés !");
 };
-$("closeSettings").onclick=()=>{$("settingsPanel").classList.add("hidden");$("pageTitle").textContent=currentChat?.title||"Nouveau chat"};
 
-/* SIDEBAR */
-$("collapseSidebar").onclick=()=> $("sidebar").classList.add("collapsed");
-$("openSidebar").onclick=()=> $("sidebar").classList.toggle("collapsed");
+$("closeSettings").onclick=()=>{
+ $("settingsPanel").classList.add("hidden");
+ $("pageTitle").textContent=currentChat?.title||"Nouveau chat";
+};
+
+/* BARRE LATERALE */
+$("collapseSidebar").onclick=()=>{
+ $("sidebar").classList.add("collapsed");
+};
+
+$("openSidebar").onclick=()=>{
+ $("sidebar").classList.toggle("collapsed");
+};
 
 function closePanels(){
- ["projectsPanel","memoryPanel","settingsPanel"].forEach(id=>$(id).classList.add("hidden"));
+ ["projectsPanel","memoryPanel","settingsPanel"].forEach(id=>{
+  $(id).classList.add("hidden");
+ });
  $("messages").classList.remove("hidden");
  $("composerWrap").classList.remove("hidden");
- $("welcome").classList.toggle("hidden",!!currentChat);
+ $("welcome").classList.toggle("hidden",messages.length>0);
 }
 
 function showPage(panel,title){
- ["projectsPanel","memoryPanel","settingsPanel"].forEach(id=>$(id).classList.add("hidden"));
+ ["projectsPanel","memoryPanel","settingsPanel"].forEach(id=>{
+  $(id).classList.add("hidden");
+ });
  $("messages").classList.add("hidden");
  $("welcome").classList.add("hidden");
  $(panel).classList.remove("hidden");
  $("composerWrap").classList.add("hidden");
  $("pageTitle").textContent=title;
 }
-$("projectsButton").onclick=()=>{showPage("projectsPanel","Mes projets");renderProjects()};
-$("memoryButton").onclick=()=>{showPage("memoryPanel","Ma mémoire");renderFacts()};
 
-/* CHATS */
+$("projectsButton").onclick=()=>{
+ showPage("projectsPanel","Mes projets");
+ renderProjects();
+};
+
+$("memoryButton").onclick=()=>{
+ showPage("memoryPanel","Ma mémoire");
+ renderFacts();
+};
+
+/* CHARGER LES CONVERSATIONS */
 async function loadChats(){
- const {data,error}=await db.from("nova_chats").select("*")
-  .eq("user_id",user.id).order("updated_at",{ascending:false});
- if(error){console.error(error);return}
+ if(!user?.id)throw new Error("Utilisateur non connecté.");
+
+ const {data,error}=await db.from("nova_chats")
+  .select("*")
+  .eq("user_id",user.id)
+  .order("updated_at",{ascending:false});
+
+ if(error)throw error;
+
  chats=data||[];
  renderChats();
 }
 
+/* AFFICHER LES CONVERSATIONS */
 function renderChats(){
  $("chatList").innerHTML="";
+
  chats.forEach(chat=>{
   const row=document.createElement("div");
   row.className="chat-item"+(currentChat?.id===chat.id?" active":"");
+
   const title=document.createElement("span");
   title.className="chat-title";
   title.textContent="💬 "+chat.title;
   title.onclick=()=>openChat(chat.id);
+
   const del=document.createElement("button");
   del.className="delete-chat";
   del.textContent="×";
   del.title="Supprimer cette conversation";
-  del.onclick=e=>{e.stopPropagation();deleteChat(chat.id)};
+  del.onclick=event=>{
+   event.stopPropagation();
+   void deleteChat(chat.id);
+  };
+
   row.append(title,del);
   $("chatList").appendChild(row);
  });
 }
 
+/* CREER UN CHAT */
 async function createChat(){
- const {data,error}=await db.from("nova_chats").insert({
-  user_id:user.id,title:"Nouveau chat"
- }).select().single();
- if(error){alert("Erreur : "+error.message);return}
+ if(!user?.id)throw new Error("Tu dois être connecté pour créer un chat.");
+
+ const {data,error}=await db.from("nova_chats")
+  .insert({
+   user_id:user.id,
+   title:"Nouveau chat"
+  })
+  .select("*")
+  .single();
+
+ if(error)throw new Error("Création du chat impossible : "+error.message);
+ if(!data?.id)throw new Error("Supabase n'a pas retourné l'identifiant du chat.");
+
  currentChat=data;
  messages=[];
+
  renderMessages();
  closePanels();
+
  $("welcome").classList.remove("hidden");
  $("pageTitle").textContent="Nouveau chat";
+
  renderChats();
  $("messageInput").focus();
+
+ return data;
 }
 
-$("newChat").onclick=createChat;
+$("newChat").onclick=async()=>{
+ if(busy)return;
+ try{
+  await createChat();
+ }catch(error){
+  alert(error.message);
+ }
+};
 
+/* OUVRIR UN CHAT */
 async function openChat(id){
- const chat=chats.find(c=>c.id===id);
+ if(!user?.id||!id)return;
+
+ const chat=chats.find(item=>item.id===id);
  if(!chat)return;
+
  currentChat=chat;
+ messages=[];
  closePanels();
  $("pageTitle").textContent=chat.title;
- const {data,error}=await db.from("nova_messages").select("*")
-  .eq("chat_id",id).eq("user_id",user.id).order("created_at",{ascending:true});
- if(error){alert(error.message);return}
+ renderChats();
+
+ const {data,error}=await db.from("nova_messages")
+  .select("*")
+  .eq("chat_id",id)
+  .eq("user_id",user.id)
+  .order("created_at",{ascending:true});
+
+ if(error){
+  alert("Impossible de charger les messages : "+error.message);
+  return;
+ }
+
  messages=data||[];
  renderMessages();
- renderChats();
 }
 
+/* SUPPRIMER UN CHAT */
 async function deleteChat(id){
  if(!confirm("Supprimer cette conversation et ses messages ?"))return;
- const {error}=await db.from("nova_chats").delete().eq("id",id).eq("user_id",user.id);
- if(error){alert(error.message);return}
- if(currentChat?.id===id){currentChat=null;messages=[];renderMessages();$("welcome").classList.remove("hidden");$("pageTitle").textContent="Nouveau chat"}
+
+ const {error}=await db.from("nova_chats")
+  .delete()
+  .eq("id",id)
+  .eq("user_id",user.id);
+
+ if(error){
+  alert(error.message);
+  return;
+ }
+
+ if(currentChat?.id===id){
+  currentChat=null;
+  messages=[];
+  renderMessages();
+  $("welcome").classList.remove("hidden");
+  $("pageTitle").textContent="Nouveau chat";
+ }
+
  await loadChats();
 }
 
+/* AFFICHER LES MESSAGES */
 function renderMessages(){
  $("messages").innerHTML="";
- const has=messages.length>0;
- $("welcome").classList.toggle("hidden",has);
- messages.forEach(m=>addMessage(m.role,m.content,false));
+
+ messages.forEach(message=>{
+  addMessage(message.role,message.content,false);
+ });
+
+ $("welcome").classList.toggle("hidden",messages.length>0);
 }
 
 function addMessage(role,content,scroll=true){
  $("welcome").classList.add("hidden");
+
  const div=document.createElement("div");
  div.className="message "+(role==="user"?"user":"assistant");
+
  const label=document.createElement("div");
  label.className="message-label";
  label.textContent=role==="user"?"Toi":"Nova";
+
  const body=document.createElement("div");
  body.textContent=content;
+
  div.append(label,body);
  $("messages").appendChild(div);
- if(scroll)$("content").scrollTop=$("content").scrollHeight;
+
+ if(scroll){
+  $("content").scrollTop=$("content").scrollHeight;
+ }
 }
 
+/* ENREGISTRER UN MESSAGE */
 async function saveMessage(role,content){
- const {data,error}=await db.from("nova_messages").insert({
-  chat_id:currentChat.id,user_id:user.id,role,content
- }).select().single();
- if(error)throw error;
+ if(!user?.id)throw new Error("Utilisateur non connecté.");
+ if(!currentChat?.id)throw new Error("Aucun chat actif.");
+
+ const {data,error}=await db.from("nova_messages")
+  .insert({
+   chat_id:currentChat.id,
+   user_id:user.id,
+   role,
+   content
+  })
+  .select("*")
+  .single();
+
+ if(error)throw new Error("Enregistrement du message impossible : "+error.message);
+ if(!data?.id)throw new Error("Le message n'a pas été confirmé par Supabase.");
+
  messages.push(data);
+ return data;
 }
 
 /* MEMOIRE */
 async function loadFacts(){
- const {data,error}=await db.from("nova_facts").select("id,content,created_at")
-  .eq("user_id",user.id).order("created_at",{ascending:false}).limit(100);
- if(error){console.error(error);return}
+ const {data,error}=await db.from("nova_facts")
+  .select("id,content,created_at")
+  .eq("user_id",user.id)
+  .order("created_at",{ascending:false})
+  .limit(100);
+
+ if(error)throw error;
+
  facts=data||[];
 }
 
 async function saveFact(content){
- if(!content||!content.trim())return;
+ if(!user?.id||!content?.trim())return;
+
  if(facts.some(f=>normalize(f.content)===normalize(content)))return;
- const {data,error}=await db.from("nova_facts").insert({
-  user_id:user.id,content:content.trim()
- }).select().single();
- if(error){console.error("Mémoire :",error);return}
- facts.unshift(data);
+
+ const {data,error}=await db.from("nova_facts")
+  .insert({
+   user_id:user.id,
+   content:content.trim()
+  })
+  .select("*")
+  .single();
+
+ if(error){
+  console.error("Erreur mémoire :",error);
+  return;
+ }
+
+ if(data)facts.unshift(data);
 }
 
 async function deleteFact(id){
- const {error}=await db.from("nova_facts").delete().eq("id",id).eq("user_id",user.id);
- if(error){alert(error.message);return}
+ const {error}=await db.from("nova_facts")
+  .delete()
+  .eq("id",id)
+  .eq("user_id",user.id);
+
+ if(error){
+  alert(error.message);
+  return;
+ }
+
  facts=facts.filter(f=>f.id!==id);
  renderFacts();
 }
 
 async function forgetAllFacts(){
  if(!confirm("Supprimer tous tes souvenirs personnels ?"))return;
- const {error}=await db.from("nova_facts").delete().eq("user_id",user.id);
- if(error){alert(error.message);return}
+
+ const {error}=await db.from("nova_facts")
+  .delete()
+  .eq("user_id",user.id);
+
+ if(error){
+  alert(error.message);
+  return;
+ }
+
  facts=[];
  renderFacts();
 }
 
 function renderFacts(){
  $("factList").innerHTML="";
+
  if(!facts.length){
   $("factList").textContent="Aucun souvenir enregistré pour le moment.";
  }else{
   facts.forEach(f=>{
-   const row=document.createElement("div");row.className="item-row";
-   const text=document.createElement("span");text.textContent=f.content;
-   const del=document.createElement("button");del.textContent="Supprimer";
+   const row=document.createElement("div");
+   row.className="item-row";
+
+   const text=document.createElement("span");
+   text.textContent=f.content;
+
+   const del=document.createElement("button");
+   del.textContent="Supprimer";
    del.onclick=()=>deleteFact(f.id);
-   row.append(text,del);$("factList").appendChild(row);
+
+   row.append(text,del);
+   $("factList").appendChild(row);
   });
  }
+
  const clear=document.createElement("button");
  clear.textContent="Effacer tous mes souvenirs";
  clear.onclick=forgetAllFacts;
@@ -516,6 +757,7 @@ function renderFacts(){
 /* DETECTION AUTOMATIQUE DE SOUVENIRS */
 async function automaticMemory(text){
  const t=normalize(text);
+
  const sensitive=/(mot de passe|password|cle api|api key|numero de carte|carte bancaire|code secret|adresse exacte)/i;
  if(sensitive.test(t))return;
 
@@ -534,7 +776,7 @@ async function automaticMemory(text){
   /^je fais .+ depuis .+/i
  ];
 
- if(patterns.some(p=>p.test(t))){
+ if(patterns.some(pattern=>pattern.test(t))){
   await saveFact(text);
   renderFacts();
  }
@@ -542,139 +784,263 @@ async function automaticMemory(text){
 
 /* PROJETS */
 async function loadProjects(){
- const {data,error}=await db.from("nova_projects").select("*")
-  .eq("user_id",user.id).order("created_at",{ascending:false});
- if(error){console.error(error);return}
+ const {data,error}=await db.from("nova_projects")
+  .select("*")
+  .eq("user_id",user.id)
+  .order("created_at",{ascending:false});
+
+ if(error)throw error;
+
  projects=data||[];
  renderProjects();
 }
+
 function renderProjects(){
  $("projectList").innerHTML="";
- if(!projects.length)$("projectList").textContent="Aucun projet pour le moment.";
- projects.forEach(p=>{
-  const row=document.createElement("div");row.className="item-row";
+
+ if(!projects.length){
+  $("projectList").textContent="Aucun projet pour le moment.";
+ }
+
+ projects.forEach(project=>{
+  const row=document.createElement("div");
+  row.className="item-row";
+
   const info=document.createElement("span");
-  info.textContent=p.name+(p.description?" — "+p.description:"");
-  const del=document.createElement("button");del.textContent="Supprimer";
-  del.onclick=()=>deleteProject(p.id);
-  row.append(info,del);$("projectList").appendChild(row);
+  info.textContent=project.name+(project.description?" — "+project.description:"");
+
+  const del=document.createElement("button");
+  del.textContent="Supprimer";
+  del.onclick=()=>deleteProject(project.id);
+
+  row.append(info,del);
+  $("projectList").appendChild(row);
  });
 }
+
 $("addProject").onclick=async()=>{
  const name=$("projectName").value.trim();
  const description=$("projectDescription").value.trim();
+
  if(!name)return alert("Donne un nom à ton projet.");
- const {error}=await db.from("nova_projects").insert({user_id:user.id,name,description});
- if(error)return alert(error.message);
- $("projectName").value="";$("projectDescription").value="";
- await loadProjects();
+ if(!user?.id)return alert("Tu dois être connecté.");
+
+ $("addProject").disabled=true;
+
+ try{
+  const {error}=await db.from("nova_projects")
+   .insert({user_id:user.id,name,description});
+
+  if(error)throw error;
+
+  $("projectName").value="";
+  $("projectDescription").value="";
+  await loadProjects();
+ }catch(error){
+  alert(error.message);
+ }finally{
+  $("addProject").disabled=false;
+ }
 };
+
 async function deleteProject(id){
  if(!confirm("Supprimer ce projet ?"))return;
- const {error}=await db.from("nova_projects").delete().eq("id",id).eq("user_id",user.id);
- if(error)return alert(error.message);
+
+ const {error}=await db.from("nova_projects")
+  .delete()
+  .eq("id",id)
+  .eq("user_id",user.id);
+
+ if(error){
+  alert(error.message);
+  return;
+ }
+
  await loadProjects();
 }
 
-/* IA */
+/* INTELLIGENCE ARTIFICIELLE */
 async function askNova(){
  const s=settings();
+
  const server=(s.server||"https://api.groq.com/openai/v1").replace(/\/+$/,"");
  const model=s.model||"openai/gpt-oss-20b";
- if(!s.key)throw new Error("Ajoute ta clé API Groq dans les paramètres ⚙️.");
+
+ if(!s.key){
+  throw new Error("Ajoute ta clé API Groq dans les paramètres ⚙️.");
+ }
 
  const memory=facts.map(f=>"- "+f.content).join("\n");
+
  const system=`Tu es Nova, une assistante intelligente, chaleureuse et honnête.
 Tu réponds en français par défaut.
 Tu peux utiliser les souvenirs ci-dessous pour personnaliser tes réponses.
 Ne prétends jamais avoir enregistré quelque chose si cela n'a pas été fait.
 Ne révèle jamais les données d'un autre utilisateur.
+
 Souvenirs personnels de cet utilisateur :
 ${memory||"Aucun souvenir enregistré."}`;
 
- const history=messages.slice(-30).map(m=>({role:m.role,content:m.content}));
+ const history=messages.slice(-30).map(message=>({
+  role:message.role,
+  content:message.content
+ }));
+
  const response=await fetch(server+"/chat/completions",{
   method:"POST",
-  headers:{"Content-Type":"application/json","Authorization":"Bearer "+s.key},
+  headers:{
+   "Content-Type":"application/json",
+   "Authorization":"Bearer "+s.key
+  },
   body:JSON.stringify({
    model,
-   messages:[{role:"system",content:system},...history],
+   messages:[
+    {role:"system",content:system},
+    ...history
+   ],
    temperature:0.7
   })
  });
- if(!response.ok)throw new Error("Erreur IA "+response.status+": "+(await response.text()).slice(0,200));
+
+ if(!response.ok){
+  const detail=await response.text();
+  throw new Error("Erreur IA "+response.status+" : "+detail.slice(0,250));
+ }
+
  const data=await response.json();
- return data.choices?.[0]?.message?.content||"Je n'ai pas réussi à répondre.";
+
+ const answer=data.choices?.[0]?.message?.content;
+ if(!answer)throw new Error("Le serveur IA n'a pas renvoyé de réponse.");
+
+ return answer;
 }
 
-/* ENVOI */
+/* ENVOYER UN MESSAGE */
 async function sendMessage(){
- if(busy||!user)return;
+ if(busy||!user?.id)return;
+
  const text=$("messageInput").value.trim();
  if(!text)return;
- busy=true;$("sendButton").disabled=true;
+
+ busy=true;
+ $("sendButton").disabled=true;
  $("messageInput").value="";
  $("status").textContent="Nova réfléchit...";
+
  closePanels();
 
  try{
-  if(!currentChat)await createChat();
+  if(!currentChat?.id){
+   await createChat();
+  }
+
+  if(!currentChat?.id){
+   throw new Error("Le chat n'a pas pu être créé.");
+  }
+
+  const activeChatId=currentChat.id;
+
   addMessage("user",text);
   await saveMessage("user",text);
   await automaticMemory(text);
 
   if(messages.length===1){
    const title=text.length>36?text.slice(0,36)+"…":text;
-   const {error}=await db.from("nova_chats").update({title,updated_at:new Date().toISOString()})
-    .eq("id",currentChat.id).eq("user_id",user.id);
-   if(!error)currentChat.title=title;
+
+   const {error}=await db.from("nova_chats")
+    .update({
+     title,
+     updated_at:new Date().toISOString()
+    })
+    .eq("id",activeChatId)
+    .eq("user_id",user.id);
+
+   if(error)throw error;
+
+   currentChat.title=title;
    $("pageTitle").textContent=title;
    await loadChats();
   }
 
   const answer=await askNova();
+
+  if(currentChat?.id!==activeChatId){
+   throw new Error("La conversation active a changé. Réessaie.");
+  }
+
   addMessage("assistant",answer);
   await saveMessage("assistant",answer);
-  await db.from("nova_chats").update({updated_at:new Date().toISOString()})
-   .eq("id",currentChat.id).eq("user_id",user.id);
+
+  const {error:updateError}=await db.from("nova_chats")
+   .update({updated_at:new Date().toISOString()})
+   .eq("id",activeChatId)
+   .eq("user_id",user.id);
+
+  if(updateError)console.error(updateError);
+
   await loadChats();
+
  }catch(error){
+  console.error("Erreur Nova :",error);
   addMessage("assistant","Oups ! "+error.message);
  }finally{
   $("status").textContent="Nova est prête ❤️";
-  busy=false;$("sendButton").disabled=false;
+  busy=false;
+  $("sendButton").disabled=false;
   $("messageInput").focus();
  }
 }
 
 $("sendButton").onclick=sendMessage;
-$("messageInput").addEventListener("keydown",e=>{
- if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}
+
+$("messageInput").addEventListener("keydown",event=>{
+ if(event.key==="Enter"&&!event.shiftKey){
+  event.preventDefault();
+  sendMessage();
+ }
 });
 
-/* CHARGEMENT INITIAL */
+/* CHARGEMENT DES DONNEES */
 async function loadAll(){
+ if(!user?.id)return;
+
+ currentChat=null;
+ messages=[];
+ chats=[];
+ facts=[];
+ projects=[];
+
  $("messages").innerHTML="";
- currentChat=null;messages=[];
- await Promise.all([loadChats(),loadFacts(),loadProjects()]);
+ $("chatList").innerHTML="";
+ $("welcome").classList.remove("hidden");
+ $("pageTitle").textContent="Nouveau chat";
+
+ await Promise.all([
+  loadChats(),
+  loadFacts(),
+  loadProjects()
+ ]);
+
  if(chats.length){
   await openChat(chats[0].id);
  }else{
+  currentChat=null;
+  messages=[];
   $("welcome").classList.remove("hidden");
   $("pageTitle").textContent="Nouveau chat";
+  renderChats();
  }
 }
 
+/* DEMARRAGE */
 (async()=>{
- const {data,error}=await db.auth.getSession();
- if(error)notice("authMessage",error.message);
- if(data?.session?.user){
-  user=data.session.user;
-  showApplication();
-  lastLoadedUser=user.id;
-  await loadAll();
- }else{
-  showAuthentication();
+ try{
+  const {data,error}=await db.auth.getSession();
+  if(error)throw error;
+  await handleSession(data.session);
+ }catch(error){
+  console.error("Démarrage Nova :",error);
+  notice("authMessage","Erreur de démarrage : "+error.message);
  }
 })();
 </script>
