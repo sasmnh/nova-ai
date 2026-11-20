@@ -783,7 +783,8 @@ async function sendMessage(event) {
   setStatus("🟡 Connexion au cerveau IA...");
 
   try {
-    const answer = await askNova();
+    const memoryAnswer = await handleMemoryCommand(text);
+const answer = memoryAnswer || await askNova();
 
     thinking.textContent = answer;
 
