@@ -3,984 +3,705 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#08090d">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nova 🧠</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  background: #08090d;
-  color: white;
-  font-family: Arial, sans-serif;
+*{box-sizing:border-box}
+body{
+ margin:0;background:#08090d;color:#fff;
+ font-family:Arial,sans-serif;min-height:100vh
 }
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
 
-.app {
-  min-height: 100dvh;
-  max-width: 900px;
-  margin: auto;
-  display: flex;
-  flex-direction: column;
+.auth-page{
+ min-height:100vh;display:flex;align-items:center;
+ justify-content:center;padding:20px
 }
-
-header {
-  padding: 20px;
-  border-bottom: 1px solid #292a30;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+.auth-card{
+ width:100%;max-width:390px;background:#13151d;
+ border:1px solid #292d3a;border-radius:20px;
+ padding:28px
 }
-
-h1 { margin: 0; font-size: 27px; }
-
-.subtitle {
-  color: #999;
-  font-size: 13px;
-  margin-top: 5px;
+.logo{text-align:center;font-size:38px;margin-bottom:8px}
+.auth-card h1{text-align:center;margin:5px 0}
+.subtitle{text-align:center;color:#999;font-size:14px;margin-bottom:25px}
+.field{margin:14px 0}
+.field label{display:block;color:#bbb;font-size:13px;margin-bottom:7px}
+.field input{
+ width:100%;padding:13px;border-radius:10px;
+ border:1px solid #343846;background:#090b11;color:white;
+ outline:none
 }
-
-button {
-  border: none;
-  border-radius: 13px;
-  padding: 12px 15px;
-  color: white;
-  background: #315efb;
-  cursor: pointer;
+.field input:focus{border-color:#8b72ff}
+.primary{
+ width:100%;padding:13px;border:0;border-radius:10px;
+ background:#8065f5;color:white;font-weight:bold;margin-top:10px
 }
-
-button:disabled { opacity: .5; }
-
-#clearMemory, #settingsButton, #logout {
-  background: #202127;
+.secondary{
+ width:100%;padding:11px;border:1px solid #343846;
+ border-radius:10px;background:#20232d;color:white;margin-top:9px
 }
-
-#authPanel {
-  margin: 18px;
-  padding: 20px;
-  background: #171920;
-  border: 1px solid #292a30;
-  border-radius: 18px;
+.auth-links{
+ display:flex;justify-content:space-between;gap:8px;
+ margin-top:17px;flex-wrap:wrap
 }
-
-#authPanel h2 {
-  margin-top: 0;
-  font-size: 20px;
+.link{
+ background:none;border:0;color:#a997ff;
+ font-size:13px;text-decoration:underline
 }
+#authMessage{font-size:13px;color:#c3b7ff;margin-top:14px;line-height:1.5}
 
-#authPanel input,
-#settingsPanel input {
-  width: 100%;
-  margin: 7px 0 13px;
-  border-radius: 12px;
+.app{height:100vh;display:flex;flex-direction:column}
+header{
+ height:65px;flex-shrink:0;border-bottom:1px solid #252833;
+ display:flex;align-items:center;justify-content:space-between;
+ padding:0 18px;background:#101219
 }
-
-#authPanel button { margin: 4px 4px 4px 0; }
-
-#settingsPanel {
-  display: none;
-  padding: 16px;
-  background: #171920;
-  border-bottom: 1px solid #292a30;
+.brand{font-size:21px;font-weight:bold}
+.header-actions{display:flex;align-items:center;gap:9px}
+.small-btn{
+ background:#20232d;border:1px solid #343846;color:white;
+ border-radius:9px;padding:9px 11px;font-size:12px
 }
-
-#settingsPanel.open { display: block; }
-
-#messages {
-  flex: 1;
-  min-height: 250px;
-  overflow-y: auto;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+#userEmail{font-size:12px;color:#aaa;max-width:140px;overflow:hidden;text-overflow:ellipsis}
+main{
+ flex:1;overflow-y:auto;width:100%;max-width:850px;
+ margin:auto;padding:22px 16px
 }
-
-.message {
-  max-width: 85%;
-  padding: 13px 16px;
-  border-radius: 18px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+.welcome{text-align:center;margin:45px 0 25px}
+.welcome .big{font-size:48px}
+.welcome h2{margin:10px 0}
+.welcome p{color:#999;font-size:14px}
+#messages{display:flex;flex-direction:column;gap:15px}
+.message{
+ max-width:85%;padding:13px 16px;border-radius:15px;
+ line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere
 }
-
-.nova {
-  background: #202127;
-  align-self: flex-start;
+.user{align-self:flex-end;background:#6952d9}
+.assistant{align-self:flex-start;background:#191c26;border:1px solid #292d3a}
+.message-label{font-size:10px;color:#aaa;margin-bottom:5px}
+.composer{
+ width:100%;max-width:850px;margin:auto;padding:12px 16px 18px
 }
-
-.user {
-  background: #315efb;
-  align-self: flex-end;
+.composer-inner{
+ display:flex;gap:9px;background:#171a23;
+ border:1px solid #343846;border-radius:15px;padding:9px
 }
-
-.input-area {
-  display: flex;
-  gap: 9px;
-  padding: 12px;
-  border-top: 1px solid #292a30;
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
+#messageInput{
+ flex:1;resize:none;min-height:42px;max-height:140px;
+ background:transparent;border:0;color:white;outline:none;padding:10px
 }
-
-input {
-  min-width: 0;
-  flex: 1;
-  padding: 15px;
-  border: none;
-  outline: none;
-  border-radius: 20px;
-  background: #202127;
-  color: white;
-  font-size: 16px;
+#sendButton{
+ width:45px;border:0;border-radius:10px;
+ background:#8065f5;color:white;font-size:20px
 }
-
-#send {
-  width: 50px;
-  height: 50px;
-  padding: 0;
-  border-radius: 50%;
-  font-size: 22px;
+.status{text-align:center;color:#777;font-size:11px;padding-bottom:8px}
+.panel{
+ max-width:850px;margin:20px auto;padding:18px;
+ background:#151821;border:1px solid #303441;border-radius:14px
 }
-
-small { color: #aaa; }
-
-.note {
-  font-size: 12px;
-  color: #999;
-  line-height: 1.5;
-  margin: 5px 0 12px;
+.panel h3{margin-top:0}
+.panel input{
+ width:100%;padding:12px;margin:7px 0 12px;
+ background:#090b11;border:1px solid #343846;
+ border-radius:9px;color:white
 }
-
-.hidden { display: none !important; }
-
-@media(max-width: 480px) {
-  .message { max-width: 93%; }
-  header { padding: 14px; }
-  header button { padding: 10px; }
-}
+.panel button{margin:5px 5px 5px 0}
+.danger{background:#632d38!important}
 </style>
 </head>
 
 <body>
 
-<div class="app">
+<!-- CONNEXION / INSCRIPTION -->
+<section id="authPage" class="auth-page">
+ <div class="auth-card">
+  <div class="logo">🧠</div>
+  <h1>Nova</h1>
+  <div class="subtitle">Ton assistant personnel intelligent</div>
 
-<header>
-  <div>
-    <h1>Nova 🧠</h1>
-    <div class="subtitle">Ton assistante personnelle</div>
+  <div id="loginForm">
+   <div class="field">
+    <label>Adresse e-mail</label>
+    <input id="loginEmail" type="email" placeholder="ton@email.com" autocomplete="email">
+   </div>
+   <div class="field">
+    <label>Mot de passe</label>
+    <input id="loginPassword" type="password" placeholder="Ton mot de passe" autocomplete="current-password">
+   </div>
+   <button class="primary" id="loginButton">Se connecter</button>
+   <div class="auth-links">
+    <button class="link" id="showSignup">Créer un compte</button>
+    <button class="link" id="showReset">Mot de passe oublié ?</button>
+   </div>
   </div>
 
-  <div>
-    <button id="settingsButton">⚙️</button>
-    <button id="clearMemory">🗑️</button>
-    <button id="logout" class="hidden">Sortir</button>
+  <div id="signupForm" class="hidden">
+   <div class="field">
+    <label>Adresse e-mail</label>
+    <input id="signupEmail" type="email" placeholder="ton@email.com" autocomplete="email">
+   </div>
+   <div class="field">
+    <label>Mot de passe (6 caractères minimum)</label>
+    <input id="signupPassword" type="password" placeholder="Choisis un mot de passe" autocomplete="new-password">
+   </div>
+   <button class="primary" id="signupButton">Créer mon compte</button>
+   <button class="secondary" id="backLogin1">Retour à la connexion</button>
   </div>
-</header>
 
-<section id="authPanel">
-  <h2>Bienvenue chez Nova 🧠</h2>
-  <p class="note">
-    Connecte-toi pour retrouver tes conversations
-    et tes souvenirs sur tes appareils.
-  </p>
+  <div id="resetForm" class="hidden">
+   <div class="field">
+    <label>Ton adresse e-mail</label>
+    <input id="resetEmail" type="email" placeholder="ton@email.com">
+   </div>
+   <button class="primary" id="resetButton">Envoyer le lien</button>
+   <button class="secondary" id="backLogin2">Retour à la connexion</button>
+  </div>
 
-  <small>Adresse email</small>
-  <input id="email" type="email"
-    placeholder="ton@email.com"
-    autocomplete="email">
-
-  <small>Mot de passe</small>
-  <input id="password" type="password"
-    placeholder="Ton mot de passe"
-    autocomplete="current-password">
-
-  <button id="loginButton">Se connecter</button>
-  <button id="signupButton">Créer un compte</button>
+  <div id="authMessage"></div>
+ </div>
 </section>
 
-<section id="settingsPanel">
+<!-- APPLICATION -->
+<section id="appPage" class="app hidden">
+ <header>
+  <div class="brand">🧠 Nova</div>
+  <div class="header-actions">
+   <span id="userEmail"></span>
+   <button class="small-btn" id="settingsButton">⚙️</button>
+   <button class="small-btn" id="logoutButton">Déconnexion</button>
+  </div>
+ </header>
 
-  <small>Adresse du serveur IA</small>
-  <input id="server"
-    placeholder="https://api.groq.com/openai/v1">
+ <main>
+  <div id="welcome" class="welcome">
+   <div class="big">🧠</div>
+   <h2>Bonjour, bienvenue sur Nova !</h2>
+   <p>Je suis ton assistant personnel. Que veux-tu faire aujourd'hui ?</p>
+  </div>
+  <div id="messages"></div>
 
-  <small>Nom du modèle</small>
-  <input id="model"
-    placeholder="openai/gpt-oss-20b">
+  <div id="settingsPanel" class="panel hidden">
+   <h3>⚙️ Réglages de Nova</h3>
+   <label>Adresse du serveur IA</label>
+   <input id="serverInput" placeholder="https://api.groq.com/openai/v1">
+   <label>Nom du modèle</label>
+   <input id="modelInput" placeholder="openai/gpt-oss-20b">
+   <label>Clé API Groq</label>
+   <input id="keyInput" type="password" placeholder="gsk_...">
+   <button class="small-btn" id="saveSettings">Enregistrer</button>
+   <button class="small-btn" id="closeSettings">Fermer</button>
+   <hr style="border-color:#343846;margin:18px 0">
+   <button class="small-btn danger" id="clearHistory">Effacer mes conversations</button>
+   <p style="color:#999;font-size:12px">
+    Tes réglages IA sont enregistrés dans ce navigateur.
+   </p>
+  </div>
+ </main>
 
-  <small>Clé API Groq</small>
-  <input id="apiKey"
-    type="password"
-    autocomplete="off"
-    placeholder="gsk_...">
-
-  <p class="note">
-    Ta clé API est conservée dans le stockage local
-    de ce navigateur. Ne partage pas ce navigateur
-    avec une personne de confiance insuffisante.
-  </p>
-
-  <button id="saveSettings">Enregistrer</button>
+ <div class="composer">
+  <div class="status" id="status">Nova est prête ❤️</div>
+  <div class="composer-inner">
+   <textarea id="messageInput" placeholder="Écris un message à Nova..." rows="1"></textarea>
+   <button id="sendButton">➤</button>
+  </div>
+ </div>
 </section>
-
-<div id="status">🟡 Connecte-toi à Nova.</div>
-
-<main id="messages" aria-live="polite"></main>
-
-<form class="input-area" id="chatForm">
-  <input id="input"
-    placeholder="Écris à Nova..."
-    autocomplete="off"
-    disabled>
-  <button id="send" type="submit" disabled>↑</button>
-</form>
-
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-(() => {
+const SUPABASE_URL = "https://yvkldxqrgnigxesoxycc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_DwDUh-Le_xR6mJnojXdL5w_QI-00AZT";
 
-"use strict";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let facts = [];
+let conversation = [];
+let sending = false;
 
 const $ = id => document.getElementById(id);
 
-const SETTINGS_KEY = "nova_settings";
-
-const SUPABASE_URL =
-  "https://yvkldxqrgnigxesoxycc.supabase.co";
-
-const SUPABASE_KEY =
-  "sb_publishable_DwDUh-Le_xR6mJnojXdL5w_QI-00AZT";
-
-const DEFAULT_SERVER =
-  "https://api.groq.com/openai/v1";
-
-const DEFAULT_MODEL =
-  "openai/gpt-oss-20b";
-
-const PERSONA = `
-Tu es Nova, une intelligence artificielle personnelle.
-
-PERSONNALITÉ :
-- Tu es drôle, chaleureuse et spontanée.
-- Tu parles principalement français.
-- Tu peux utiliser quelques expressions du français gabonais.
-- Tu es naturelle, intelligente et respectueuse.
-- Tu sais être sérieuse quand la situation le demande.
-- Tu ne prétends jamais avoir fait une action que tu n'as pas faite.
-- Tu réponds de manière claire et utile.
-
-MÉMOIRE :
-- Utilise les souvenirs fournis pour personnaliser tes réponses.
-- Ne prétends jamais te souvenir d'une information absente.
-- Tu ne dois jamais inventer de souvenirs.
-- Les commandes de mémoire sont exécutées par ton application.
-`;
-
-if (!window.supabase) {
-  $("status").textContent =
-    "🔴 Impossible de charger Supabase.";
-  return;
+function showMessage(id, message) {
+ $(id).textContent = message;
 }
 
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+function showAuthForm(form) {
+ ["loginForm","signupForm","resetForm"].forEach(id =>
+  $(id).classList.toggle("hidden", id !== form)
+ );
+ showMessage("authMessage","");
+}
 
-let conversation = [];
-let facts = [];
-let busy = false;
-let currentUser = null;
-let loadedUserId = null;
+function showApp() {
+ $("authPage").classList.add("hidden");
+ $("appPage").classList.remove("hidden");
+ $("userEmail").textContent = currentUser.email || "";
+}
 
-let settings = {
-  server: DEFAULT_SERVER,
-  model: DEFAULT_MODEL,
-  apiKey: ""
+function showAuth() {
+ $("appPage").classList.add("hidden");
+ $("authPage").classList.remove("hidden");
+}
+
+function normalizeText(value) {
+ return String(value || "").normalize("NFD")
+  .replace(/[\u0300-\u036f]/g,"")
+  .toLowerCase().trim();
+}
+
+/* AUTHENTIFICATION */
+
+$("showSignup").onclick = () => showAuthForm("signupForm");
+$("showReset").onclick = () => showAuthForm("resetForm");
+$("backLogin1").onclick = () => showAuthForm("loginForm");
+$("backLogin2").onclick = () => showAuthForm("loginForm");
+
+$("signupButton").onclick = async () => {
+ const email = $("signupEmail").value.trim();
+ const password = $("signupPassword").value;
+
+ if (!email || password.length < 6) {
+  return showMessage("authMessage","Entre un e-mail valide et un mot de passe d'au moins 6 caractères.");
+ }
+
+ $("signupButton").disabled = true;
+ showMessage("authMessage","Création du compte...");
+
+ const {data,error} = await db.auth.signUp({
+  email,password
+ });
+
+ $("signupButton").disabled = false;
+
+ if (error) return showMessage("authMessage",error.message);
+
+ if (data.session) {
+  showMessage("authMessage","Compte créé !");
+ } else {
+  showMessage("authMessage","Compte créé ! Vérifie ta boîte mail pour confirmer ton adresse avant de te connecter.");
+  showAuthForm("loginForm");
+  showMessage("authMessage","Compte créé ! Consulte tes e-mails pour confirmer ton inscription.");
+ }
 };
 
-try {
-  settings = {
-    ...settings,
-    ...JSON.parse(
-      localStorage.getItem(SETTINGS_KEY) || "{}"
-    )
-  };
-} catch (error) {
-  console.error(error);
-}
+$("loginButton").onclick = async () => {
+ const email = $("loginEmail").value.trim();
+ const password = $("loginPassword").value;
 
-$("server").value = settings.server;
-$("model").value = settings.model;
-$("apiKey").value = settings.apiKey;
+ if (!email || !password) {
+  return showMessage("authMessage","Entre ton e-mail et ton mot de passe.");
+ }
 
-const messages = $("messages");
-const input = $("input");
-const send = $("send");
-const status = $("status");
+ $("loginButton").disabled = true;
+ showMessage("authMessage","Connexion...");
 
-function setStatus(text) {
-  status.textContent = text;
-}
+ const {error} = await db.auth.signInWithPassword({email,password});
 
-function updateInterface() {
-  const connected = !!currentUser;
+ $("loginButton").disabled = false;
 
-  $("authPanel").classList.toggle(
-    "hidden", connected
-  );
+ if (error) showMessage("authMessage",error.message);
+};
 
-  $("logout").classList.toggle(
-    "hidden", !connected
-  );
+$("resetButton").onclick = async () => {
+ const email = $("resetEmail").value.trim();
+ if (!email) return showMessage("authMessage","Entre ton adresse e-mail.");
 
-  input.disabled = !connected || busy;
-  send.disabled = !connected || busy;
+ const {error} = await db.auth.resetPasswordForEmail(email,{
+  redirectTo: window.location.origin + window.location.pathname
+ });
 
-  if (connected) {
-    setStatus("🟢 Connecté : " + currentUser.email);
-  } else {
-    setStatus("🟡 Connecte-toi à Nova.");
+ if (error) return showMessage("authMessage",error.message);
+
+ showMessage("authMessage","Si cette adresse possède un compte, un e-mail de réinitialisation va être envoyé.");
+};
+
+$("logoutButton").onclick = async () => {
+ await db.auth.signOut();
+};
+
+db.auth.onAuthStateChange(async (event,session) => {
+ if (event === "PASSWORD_RECOVERY") {
+  const newPassword = prompt("Entre ton nouveau mot de passe (6 caractères minimum) :");
+  if (newPassword && newPassword.length >= 6) {
+   const {error} = await db.auth.updateUser({password:newPassword});
+   alert(error ? error.message : "Mot de passe modifié !");
   }
-}
+ }
 
-function addMessage(content, role) {
-  const element = document.createElement("div");
+ if (session?.user) {
+  currentUser = session.user;
+  showApp();
+  await loadUserData();
+ } else {
+  currentUser = null;
+  facts = [];
+  conversation = [];
+  $("messages").innerHTML = "";
+  showAuth();
+ }
+});
 
-  element.className =
-    "message " +
-    (role === "user" ? "user" : "nova");
-
-  element.textContent = content;
-
-  messages.appendChild(element);
-  messages.scrollTop = messages.scrollHeight;
-
-  return element;
-}
-
-function restoreMessages() {
-  messages.replaceChildren();
-
-  if (!conversation.length) {
-    addMessage(
-      "Salut ! Moi, c'est Nova 🧠✨ Je suis là, écris-moi !",
-      "assistant"
-    );
-    return;
-  }
-
-  conversation.forEach(message => {
-    addMessage(message.content, message.role);
-  });
-}
-
-function setBusy(value) {
-  busy = value;
-  input.disabled = value || !currentUser;
-  send.disabled = value || !currentUser;
-}
-
-// NORMALISATION
-
-function normalizeText(text) {
-  return String(text || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[.!?,;:]+$/g, "")
-    .trim();
-}
-
-// CONNEXION
-
-async function login() {
-  const email = $("email").value.trim();
-  const password = $("password").value;
-
-  if (!email || !password) {
-    setStatus("⚠️ Remplis ton email et ton mot de passe.");
-    return;
-  }
-
-  setStatus("⏳ Connexion...");
-
-  const { error } =
-    await supabaseClient.auth.signInWithPassword({
-      email,
-      password
-    });
-
-  if (error) setStatus("🔴 " + error.message);
-}
-
-async function signup() {
-  const email = $("email").value.trim();
-  const password = $("password").value;
-
-  if (!email || !password) {
-    setStatus("⚠️ Remplis ton email et ton mot de passe.");
-    return;
-  }
-
-  if (password.length < 6) {
-    setStatus("⚠️ Mot de passe : 6 caractères minimum.");
-    return;
-  }
-
-  setStatus("⏳ Création du compte...");
-
-  const { data, error } =
-    await supabaseClient.auth.signUp({
-      email,
-      password
-    });
-
-  if (error) {
-    setStatus("🔴 " + error.message);
-    return;
-  }
-
-  if (!data.session) {
-    setStatus("📩 Vérifie tes emails pour confirmer ton compte.");
-  } else {
-    setStatus("🟢 Compte créé !");
-  }
-}
-
-async function logout() {
-  const { error } =
-    await supabaseClient.auth.signOut();
-
-  if (error) setStatus("🔴 " + error.message);
-}
-
-// MÉMOIRE INTELLIGENTE
-
-async function saveFact(content) {
-  const cleanContent = content.trim();
-
-  if (!cleanContent || !currentUser) {
-    throw new Error("Impossible d'enregistrer ce souvenir.");
-  }
-
-  const normalized = normalizeText(cleanContent);
-
-  if (facts.some(f => normalizeText(f) === normalized)) {
-    return false;
-  }
-
-  const { data, error } = await supabaseClient
-    .from("nova_facts")
-    .insert({
-      user_id: currentUser.id,
-      content: cleanContent
-    })
-    .select("content")
-    .single();
-
-  if (error) throw error;
-
-  facts.unshift(data.content);
-  return true;
-}
+/* MEMOIRE PERSONNELLE */
 
 async function loadFacts() {
-  if (!currentUser) return;
+ facts = [];
 
-  const { data, error } = await supabaseClient
-    .from("nova_facts")
-    .select("id, content")
-    .eq("user_id", currentUser.id)
-    .order("created_at", { ascending: false })
-    .limit(50);
+ if (!currentUser) return;
 
-  if (error) throw error;
+ const {data,error} = await db.from("nova_facts")
+  .select("id,content,created_at")
+  .eq("user_id",currentUser.id)
+  .order("created_at",{ascending:false})
+  .limit(50);
 
-  facts = (data || []).map(item => item.content);
+ if (error) {
+  console.error("Erreur chargement mémoire :",error);
+  return;
+ }
+
+ facts = data || [];
+}
+
+async function saveFact(content) {
+ if (!currentUser || !content.trim()) return false;
+
+ const exists = facts.some(f => normalizeText(f.content) === normalizeText(content));
+ if (exists) return true;
+
+ const {data,error} = await db.from("nova_facts")
+  .insert({user_id:currentUser.id,content:content.trim()})
+  .select("id,content,created_at")
+  .single();
+
+ if (error) {
+  console.error(error);
+  return false;
+ }
+
+ facts.unshift(data);
+ return true;
 }
 
 async function forgetFact(keyword) {
-  if (!currentUser) {
-    throw new Error("Aucun compte connecté.");
-  }
+ if (!currentUser) return false;
 
-  const { data, error } = await supabaseClient
-    .from("nova_facts")
-    .select("id, content")
-    .eq("user_id", currentUser.id);
+ const word = normalizeText(keyword);
+ const matches = facts.filter(f => normalizeText(f.content).includes(word));
 
-  if (error) throw error;
+ if (!matches.length) return false;
 
-  const key = normalizeText(keyword);
+ const ids = matches.map(f => f.id);
+ const {error} = await db.from("nova_facts")
+  .delete()
+  .eq("user_id",currentUser.id)
+  .in("id",ids);
 
-  const matches = (data || []).filter(item =>
-    normalizeText(item.content).includes(key)
-  );
+ if (error) {
+  console.error(error);
+  return false;
+ }
 
-  if (!matches.length) return 0;
-
-  const ids = matches.map(item => item.id);
-
-  const { error: deleteError } = await supabaseClient
-    .from("nova_facts")
-    .delete()
-    .eq("user_id", currentUser.id)
-    .in("id", ids);
-
-  if (deleteError) throw deleteError;
-
-  await loadFacts();
-
-  return matches.length;
+ facts = facts.filter(f => !ids.includes(f.id));
+ return true;
 }
 
 async function forgetAllFacts() {
-  if (!currentUser) {
-    throw new Error("Aucun compte connecté.");
-  }
+ if (!currentUser) return false;
 
-  const { error } = await supabaseClient
-    .from("nova_facts")
-    .delete()
-    .eq("user_id", currentUser.id);
+ const {error} = await db.from("nova_facts")
+  .delete()
+  .eq("user_id",currentUser.id);
 
-  if (error) throw error;
+ if (error) return false;
 
-  facts = [];
+ facts = [];
+ return true;
 }
-
-// COMMANDES DE MÉMOIRE
 
 async function handleMemoryCommand(text) {
-  const message = text.trim();
+ const t = normalizeText(text);
 
-  const saveMatch = message.match(
-    /^(?:souviens-toi(?: bien)?(?: que)?|retiens(?: que)?|n'oublie pas que)\s+(.+)[.!?]*$/i
-  );
+ if (/^(oublie|efface|supprime) (tous mes souvenirs|toute ma memoire|tout ce que tu sais sur moi)[.! ]*$/.test(t)) {
+  const ok = await forgetAllFacts();
+  return ok ? "J'ai effacé tes souvenirs personnels. ❤️" : "Je n'ai pas réussi à effacer tes souvenirs.";
+ }
 
-  if (saveMatch) {
-    const fact = saveMatch[1].trim();
+ const saveMatch = text.match(/^(souviens-toi que|retiens que|memorise que)\s+(.+)[.! ]*$/i);
+ if (saveMatch) {
+  const ok = await saveFact(saveMatch[2].replace(/[.! ]+$/,""));
+  return ok ? "C'est enregistré dans ta mémoire ! 🧠❤️" : "Je n'ai pas réussi à enregistrer ce souvenir.";
+ }
 
-    const saved = await saveFact(fact);
+ const forgetMatch = text.match(/^(oublie|efface|supprime)\s+(.+?)[.! ]*$/i);
+ if (forgetMatch) {
+  const keyword = forgetMatch[2].replace(/[.! ]+$/,"");
+  const ok = await forgetFact(keyword);
+  return ok ? "C'est oublié ! ❤️" : "Je n'ai trouvé aucun souvenir correspondant.";
+ }
 
-    return saved
-      ? "C'est enregistré dans ma mémoire ! 🧠❤️"
-      : "Je connaissais déjà cette information ! ❤️";
-  }
-
-  if (/^(?:oublie|efface|supprime)\s+(?:tous les souvenirs|toute ma memoire|tout ce que tu sais sur moi)[.!?]*$/i.test(normalizeText(message))) {
-    await forgetAllFacts();
-
-    return "C'est fait ! J'ai effacé tous mes souvenirs personnels enregistrés. ❤️";
-  }
-
-  const forgetMatch = message.match(
-    /^(?:oublie|efface|supprime)\s+(.+)[.!?]*$/i
-  );
-
-  if (forgetMatch) {
-    const keyword = forgetMatch[1].trim();
-    const count = await forgetFact(keyword);
-
-    return count
-      ? "J'ai oublié " + count + " souvenir(s) correspondant(s). ❤️"
-      : "Je n'ai trouvé aucun souvenir correspondant.";
-  }
-
-  return null;
+ return null;
 }
-
-// MÉMOIRE PROPOSÉE AUTOMATIQUEMENT
 
 async function suggestMemory(text) {
-  const message = text.trim();
+ const patterns = [
+  /j'aime .+/i,/j'adore .+/i,/je prefere .+/i,
+  /je deteste .+/i,/mon animal prefere est .+/i,
+  /ma couleur preferee est .+/i,/mon plat prefere est .+/i
+ ];
 
-  const patterns = [
-    /^j'aime\b/i,
-    /^j'adore\b/i,
-    /^je préfère\b/i,
-    /^je prefere\b/i,
-    /^je déteste\b/i,
-    /^je deteste\b/i,
-    /^mon animal préféré est\b/i,
-    /^ma couleur préférée est\b/i,
-    /^mon loisir préféré est\b/i,
-    /^je suis passionné(?:e)? de\b/i,
-    /^ma passion est\b/i
-  ];
+ if (!patterns.some(p => p.test(normalizeText(text)))) return;
 
-  if (!patterns.some(pattern => pattern.test(message))) {
-    return false;
-  }
-
-  if (message.length > 180) return false;
-
-  if (facts.some(f =>
-    normalizeText(f) === normalizeText(message)
-  )) {
-    return false;
-  }
-
-  const accepted = confirm(
-    "🧠 J'ai remarqué une information qui pourrait être utile :\n\n" +
-    message +
-    "\n\nVeux-tu que je la retienne pour nos prochaines conversations ?"
-  );
-
-  if (!accepted) return false;
-
-  await saveFact(message);
-
-  setStatus("❤️ Nouveau souvenir enregistré !");
-
-  return true;
+ if (confirm("Veux-tu que Nova retienne cette information pour les prochaines conversations ?")) {
+  const ok = await saveFact(text);
+  if (ok) addMessage("assistant","Je garderai cette information en mémoire ! 🧠❤️");
+ }
 }
 
-// MÉMOIRE DES CONVERSATIONS
+/* CONVERSATIONS PRIVEES */
 
-async function loadCloudMemory() {
-  if (!currentUser) return;
+async function loadConversation() {
+ conversation = [];
 
-  setStatus("🧠 Récupération de tes souvenirs...");
+ const {data,error} = await db.from("nova_memories")
+  .select("id,content,category,created_at")
+  .eq("user_id",currentUser.id)
+  .eq("category","conversation")
+  .order("created_at",{ascending:true})
+  .limit(100);
 
+ if (error) {
+  console.error("Erreur historique :",error);
+  return;
+ }
+
+ for (const row of (data || [])) {
   try {
-    await loadFacts();
+   const item = JSON.parse(row.content);
+   if (item.role && item.content) conversation.push(item);
+  } catch(e) {}
+ }
 
-    const { data, error } = await supabaseClient
-      .from("nova_memories")
-      .select("content, category, created_at")
-      .eq("user_id", currentUser.id)
-      .order("created_at", { ascending: false })
-      .limit(40);
-
-    if (error) throw error;
-
-    if (!currentUser) return;
-
-    conversation = (data || [])
-      .reverse()
-      .filter(item =>
-        ["user", "assistant"].includes(item.category)
-      )
-      .map(item => ({
-        role: item.category,
-        content: item.content
-      }));
-
-    conversation = conversation.slice(-40);
-
-    restoreMessages();
-    updateInterface();
-
-    setStatus("🟢 Nova est connectée. Mémoire synchronisée !");
-
-  } catch (error) {
-    console.error("Chargement mémoire :", error);
-
-    loadedUserId = null;
-
-    setStatus(
-      "🔴 Erreur de chargement : " + error.message
-    );
-  }
+ conversation = conversation.slice(-40);
+ renderConversation();
 }
 
-async function saveCloudExchange(userText, answer) {
-  if (!currentUser) {
-    throw new Error("Aucun compte connecté.");
-  }
+async function saveConversationMessage(role,content) {
+ if (!currentUser) return;
 
-  const rows = [
-    {
-      user_id: currentUser.id,
-      content: userText,
-      category: "user"
-    },
-    {
-      user_id: currentUser.id,
-      content: answer,
-      category: "assistant"
-    }
-  ];
+ const {error} = await db.from("nova_memories").insert({
+  user_id:currentUser.id,
+  content:JSON.stringify({role,content}),
+  category:"conversation"
+ });
 
-  const { error } = await supabaseClient
-    .from("nova_memories")
-    .insert(rows);
-
-  if (error) throw error;
+ if (error) console.error("Erreur sauvegarde conversation :",error);
 }
 
-async function clearCloudMemory() {
-  if (!currentUser) {
-    setStatus("⚠️ Connecte-toi d'abord.");
-    return;
-  }
+async function loadUserData() {
+ $("messages").innerHTML = "";
+ conversation = [];
+ facts = [];
+ $("welcome").classList.remove("hidden");
 
-  if (!confirm("Effacer tout l'historique des conversations ?")) {
-    return;
-  }
-
-  setStatus("⏳ Effacement...");
-
-  const { error } = await supabaseClient
-    .from("nova_memories")
-    .delete()
-    .eq("user_id", currentUser.id);
-
-  if (error) {
-    setStatus("🔴 " + error.message);
-    return;
-  }
-
-  conversation = [];
-  restoreMessages();
-
-  setStatus("🧠 Historique effacé. Tes souvenirs personnels sont conservés.");
+ await loadFacts();
+ await loadConversation();
 }
 
-// CERVEAU GROQ
+async function clearHistory() {
+ if (!confirm("Effacer toutes tes conversations ? Tes souvenirs personnels seront conservés.")) return;
+
+ const {error} = await db.from("nova_memories")
+  .delete()
+  .eq("user_id",currentUser.id)
+  .eq("category","conversation");
+
+ if (error) {
+  alert("Impossible d'effacer l'historique : " + error.message);
+  return;
+ }
+
+ conversation = [];
+ $("messages").innerHTML = "";
+ $("welcome").classList.remove("hidden");
+}
+
+/* AFFICHAGE */
+
+function addMessage(role,content) {
+ $("welcome").classList.add("hidden");
+
+ const div = document.createElement("div");
+ div.className = "message " + (role === "user" ? "user" : "assistant");
+
+ const label = document.createElement("div");
+ label.className = "message-label";
+ label.textContent = role === "user" ? "Toi" : "Nova";
+
+ const body = document.createElement("div");
+ body.textContent = content;
+
+ div.append(label,body);
+ $("messages").appendChild(div);
+ $("messages").scrollTop = $("messages").scrollHeight;
+ window.scrollTo(0,document.body.scrollHeight);
+}
+
+/* IA GROQ */
+
+function getSettings() {
+ try {
+  return JSON.parse(localStorage.getItem("nova_settings")) || {};
+ } catch(e) {
+  return {};
+ }
+}
 
 async function askNova() {
-  const endpoint = settings.server
-    .trim()
-    .replace(/\/+$/, "");
+ const settings = getSettings();
 
-  const apiKey = settings.apiKey.trim();
-  const model = settings.model.trim();
+ const server = (settings.server || "https://api.groq.com/openai/v1").replace(/\/+$/,"");
+ const model = settings.model || "openai/gpt-oss-20b";
+ const key = settings.key || "";
 
-  if (!endpoint || !apiKey || !model) {
-    throw new Error("Vérifie les réglages du cerveau IA.");
-  }
+ if (!key) throw new Error("Ajoute ta clé API Groq dans les réglages ⚙️.");
 
-  const memoryContext = facts.length
-    ? "Voici les souvenirs personnels confirmés de l'utilisateur :\n" +
-      facts.map(f => "- " + f).join("\n")
-    : "Aucun souvenir personnel n'est actuellement enregistré.";
+ const memoryText = facts.map(f => "- " + f.content).join("\n");
 
-  const response = await fetch(
-    endpoint + "/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + apiKey
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: "system",
-            content: PERSONA
-          },
-          {
-            role: "system",
-            content: memoryContext
-          },
-          ...conversation.slice(-20)
-        ],
-        temperature: 0.8,
-        max_completion_tokens: 700,
-        stream: false
-      })
-    }
-  );
+ const systemPrompt = `Tu es Nova, une assistante intelligente, chaleureuse et utile.
+Tu réponds en français sauf demande contraire.
+Tu es honnête : ne prétends jamais avoir fait une action que tu n'as pas faite.
+Tu connais uniquement les souvenirs personnels présents ci-dessous.
+Souvenirs personnels de cet utilisateur :
+${memoryText || "Aucun souvenir enregistré."}
+Ne révèle jamais les informations d'un autre utilisateur.`;
 
-  let data;
+ const messages = [
+  {role:"system",content:systemPrompt},
+  ...conversation.slice(-20).map(m => ({role:m.role,content:m.content}))
+ ];
 
-  try {
-    data = await response.json();
-  } catch (error) {
-    throw new Error("Réponse du serveur illisible.");
-  }
+ const response = await fetch(server + "/chat/completions",{
+  method:"POST",
+  headers:{
+   "Content-Type":"application/json",
+   "Authorization":"Bearer " + key
+  },
+  body:JSON.stringify({
+   model,
+   messages,
+   temperature:0.7
+  })
+ });
 
-  if (!response.ok) {
-    throw new Error(
-      "HTTP " + response.status + " : " +
-      (data.error?.message || "Erreur inconnue")
-    );
-  }
+ if (!response.ok) {
+  const detail = await response.text();
+  throw new Error("Erreur IA (" + response.status + ") : " + detail.slice(0,250));
+ }
 
-  const answer = data.choices?.[0]?.message?.content;
-
-  if (typeof answer !== "string" || !answer.trim()) {
-    throw new Error("Le cerveau IA n'a pas envoyé de réponse.");
-  }
-
-  return answer.trim();
+ const data = await response.json();
+ return data.choices?.[0]?.message?.content || "Je n'ai pas réussi à répondre.";
 }
 
-// DISCUSSION
+/* ENVOI DES MESSAGES */
 
-async function sendMessage(event) {
-  event.preventDefault();
+async function sendMessage() {
+ if (sending || !currentUser) return;
 
-  const text = input.value.trim();
+ const text = $("messageInput").value.trim();
+ if (!text) return;
 
-  if (!text || busy || !currentUser) return;
+ $("messageInput").value = "";
+ sending = true;
+ $("sendButton").disabled = true;
+ $("status").textContent = "Nova réfléchit...";
 
-  input.value = "";
+ addMessage("user",text);
 
-  addMessage(text, "user");
+ const commandAnswer = await handleMemoryCommand(text);
 
-  conversation.push({
-    role: "user",
-    content: text
-  });
+ if (commandAnswer !== null) {
+  addMessage("assistant",commandAnswer);
+  await saveConversationMessage("user",text);
+  await saveConversationMessage("assistant",commandAnswer);
+  conversation.push({role:"user",content:text},{role:"assistant",content:commandAnswer});
+ } else {
+  await suggestMemory(text);
 
-  conversation = conversation.slice(-40);
-
-  setBusy(true);
-
-  const thinking = addMessage(
-    "💭 Nova réfléchit...",
-    "assistant"
-  );
+  conversation.push({role:"user",content:text});
+  await saveConversationMessage("user",text);
 
   try {
-    // 1. Vérifier les commandes de mémoire
-    let answer = await handleMemoryCommand(text);
-
-    // 2. Proposer de retenir une information importante
-    if (answer === null) {
-      await suggestMemory(text);
-
-      // 3. Demander une réponse au cerveau IA
-      answer = await askNova();
-    }
-
-    thinking.textContent = answer;
-
-    conversation.push({
-      role: "assistant",
-      content: answer
-    });
-
-    conversation = conversation.slice(-40);
-
-    try {
-      await saveCloudExchange(text, answer);
-
-      setStatus("🟢 Réponse enregistrée dans l'historique.");
-
-    } catch (memoryError) {
-      console.error("Historique cloud :", memoryError);
-
-      setStatus(
-        "⚠️ Réponse reçue, mais historique non enregistré : " +
-        memoryError.message
-      );
-    }
-
-  } catch (error) {
-    console.error("Nova :", error);
-
-    thinking.textContent = "⚠️ " + error.message;
-
-    conversation.pop();
-    conversation.pop();
-
-    setStatus("🔴 Une erreur est survenue.");
-  } finally {
-    setBusy(false);
-    input.focus();
-    messages.scrollTop = messages.scrollHeight;
+   const answer = await askNova();
+   addMessage("assistant",answer);
+   conversation.push({role:"assistant",content:answer});
+   await saveConversationMessage("assistant",answer);
+  } catch(error) {
+   addMessage("assistant","Oups ! " + error.message);
+   conversation.pop();
   }
+ }
+
+ $("status").textContent = "Nova est prête ❤️";
+ $("sendButton").disabled = false;
+ sending = false;
+ $("messageInput").focus();
 }
 
-// RÉGLAGES
+$("sendButton").onclick = sendMessage;
 
-$("saveSettings").addEventListener("click", () => {
-  settings.server = $("server").value.trim();
-  settings.model = $("model").value.trim();
-  settings.apiKey = $("apiKey").value.trim();
-
-  try {
-    localStorage.setItem(
-      SETTINGS_KEY,
-      JSON.stringify(settings)
-    );
-
-    $("settingsPanel").classList.remove("open");
-
-    setStatus("⚙️ Réglages enregistrés.");
-
-  } catch (error) {
-    setStatus("⚠️ Impossible d'enregistrer les réglages.");
-  }
+$("messageInput").addEventListener("keydown",e => {
+ if (e.key === "Enter" && !e.shiftKey) {
+  e.preventDefault();
+  sendMessage();
+ }
 });
 
-$("settingsButton").addEventListener("click", () => {
-  $("settingsPanel").classList.toggle("open");
-});
+/* REGLAGES */
 
-$("chatForm").addEventListener("submit", sendMessage);
+$("settingsButton").onclick = () => {
+ const s = getSettings();
+ $("serverInput").value = s.server || "https://api.groq.com/openai/v1";
+ $("modelInput").value = s.model || "openai/gpt-oss-20b";
+ $("keyInput").value = s.key || "";
+ $("settingsPanel").classList.remove("hidden");
+};
 
-$("loginButton").addEventListener("click", login);
-$("signupButton").addEventListener("click", signup);
-$("logout").addEventListener("click", logout);
+$("closeSettings").onclick = () => $("settingsPanel").classList.add("hidden");
 
-$("clearMemory").addEventListener(
-  "click",
-  clearCloudMemory
-);
+$("saveSettings").onclick = () => {
+ localStorage.setItem("nova_settings",JSON.stringify({
+  server:$("serverInput").value.trim(),
+  model:$("modelInput").value.trim(),
+  key:$("keyInput").value.trim()
+ }));
+ alert("Réglages enregistrés !");
+ $("settingsPanel").classList.add("hidden");
+};
 
-// SUIVI DE SESSION
+$("clearHistory").onclick = clearHistory;
 
-supabaseClient.auth.onAuthStateChange(
-  (event, session) => {
-    const newUser = session?.user || null;
-    const newId = newUser?.id || null;
+/* DEMARRAGE */
 
-    if (newId !== loadedUserId) {
-      loadedUserId = newId;
-      currentUser = newUser;
-      facts = [];
-      conversation = [];
+(async function init() {
+ const {data,error} = await db.auth.getSession();
 
-      restoreMessages();
-      updateInterface();
+ if (error) {
+  showMessage("authMessage","Erreur de connexion à Supabase : " + error.message);
+ }
 
-      if (currentUser) {
-        loadCloudMemory();
-      }
-    }
-  }
-);
-
-// SESSION INITIALE
-
-supabaseClient.auth.getSession().then(({ data, error }) => {
-  if (error) {
-    setStatus("🔴 Impossible de vérifier la session.");
-    return;
-  }
-
-  const user = data.session?.user || null;
-
-  if (user && user.id !== loadedUserId) {
-    loadedUserId = user.id;
-    currentUser = user;
-    updateInterface();
-    loadCloudMemory();
-
-  } else if (!user) {
-    currentUser = null;
-    loadedUserId = null;
-    updateInterface();
-    restoreMessages();
-  }
-});
-
+ if (data?.session?.user) {
+  currentUser = data.session.user;
+  showApp();
+  await loadUserData();
+ } else {
+  showAuth();
+ }
 })();
 </script>
-
 </body>
 </html>
