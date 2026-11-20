@@ -5,10 +5,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#090b12">
-<title>Nova AI — Assistante intelligente</title>
-<meta name="description" content="Nova, ton assistante IA personnelle.">
+
+<title>Nova AI – Assistante intelligente gratuite en ligne</title>
+
+<meta name="description" content="Découvre Nova AI, ton assistante intelligente gratuite. Discute avec une IA, pose tes questions, fais des recherches sur Internet, analyse des fichiers et organise tes projets.">
+
 <meta name="robots" content="index, follow">
+<meta name="googlebot" content="index, follow">
+
 <link rel="canonical" href="https://sasmnh.github.io/nova-ai/">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Nova AI – Ton assistante intelligente">
+<meta property="og:description" content="Discute, apprends, crée et recherche sur Internet avec Nova AI.">
+<meta property="og:url" content="https://sasmnh.github.io/nova-ai/">
+<meta property="og:site_name" content="Nova AI">
+
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Nova AI – Assistante intelligente">
+<meta name="twitter:description" content="Ton assistante intelligente gratuite en ligne.">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -212,9 +227,6 @@ body.light .new-chat{color:white}
 <div class="toast" id="toast"></div>
 
 <script>
-/* =========================
-   CONFIGURATION NOVA
-========================= */
 const SUPABASE_URL="https://yvkldxqrgnigxesoxycc.supabase.co";
 const SUPABASE_KEY="sb_publishable_DwDUh-Le_xR6mJnojXdL5w_QI-00AZT";
 const EDGE_URL=SUPABASE_URL+"/functions/v1/smooth-endpoint";
@@ -231,11 +243,9 @@ const $=id=>document.getElementById(id);
 const escapeHTML=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function toast(message){const el=$("toast");el.textContent=message;el.style.display="block";clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.style.display="none",3000)}
 function errorText(e){return e?.message||String(e)}
-function safeFileName(s){return String(s).replace(/[^\w.\- ]/g,"_").slice(0,100)}
 function setting(key,def){try{const v=localStorage.getItem("nova_"+key);return v===null?def:v}catch{return def}}
 function saveSetting(key,value){try{localStorage.setItem("nova_"+key,String(value))}catch{}}
-function getHeaders(){return {apikey:SUPABASE_KEY,Authorization:"Bearer "+(db.auth.getSession? "": "")}}
-function closeMobile(){ $("sidebar").classList.remove("open");$("overlay").classList.remove("show") }
+function closeMobile(){$("sidebar").classList.remove("open");$("overlay").classList.remove("show")}
 
 async function getSession(){
  const {data,error}=await db.auth.getSession();
@@ -248,9 +258,7 @@ async function apiHeaders(){
  return {apikey:SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"};
 }
 
-/* =========================
-   AUTHENTIFICATION
-========================= */
+/* AUTHENTIFICATION */
 function showAuth(show){$("authScreen").style.display=show?"flex":"none"}
 function setAuthMode(mode){
  authMode=mode;
@@ -282,9 +290,7 @@ $("forgot").onclick=async()=>{
 $("logout").onclick=async()=>{await db.auth.signOut();location.reload()};
 $("deleteAccountNote").onclick=async()=>{await db.auth.signOut();location.reload()};
 
-/* =========================
-   DEMARRAGE
-========================= */
+/* DEMARRAGE */
 async function initialize(){
  try{
   const session=await getSession();
@@ -310,9 +316,7 @@ async function startApp(){
  if(!currentChat)renderMessages();
 }
 
-/* =========================
-   NAVIGATION
-========================= */
+/* NAVIGATION */
 function showView(name){
  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
  $(name+"View").classList.add("active");
@@ -326,9 +330,7 @@ $("overlay").onclick=closeMobile;
 $("theme").onclick=()=>{document.body.classList.toggle("light");saveSetting("theme",document.body.classList.contains("light")?"light":"dark")};
 if(setting("theme","dark")==="light")document.body.classList.add("light");
 
-/* =========================
-   CONVERSATIONS
-========================= */
+/* CONVERSATIONS */
 async function loadChats(){
  const {data,error}=await db.from("nova_chats").select("*").order("updated_at",{ascending:false}).limit(100);
  if(error)throw error;
@@ -390,9 +392,7 @@ async function updateChatTitle(text){
  await loadChats();
 }
 
-/* =========================
-   AFFICHAGE ET MARKDOWN SIMPLE
-========================= */
+/* MARKDOWN */
 function renderMarkdown(text){
  let s=escapeHTML(text);
  s=s.replace(/```([\s\S]*?)```/g,(_,code)=>"<pre><code>"+code+"</code></pre>");
@@ -429,9 +429,7 @@ function addMessageElement(role,content,id=null){
  return el;
 }
 
-/* =========================
-   MEMOIRE AUTOMATIQUE
-========================= */
+/* MEMOIRE */
 async function loadFacts(){
  const {data,error}=await db.from("nova_facts").select("*").order("created_at",{ascending:false}).limit(100);
  if(error)throw error;
@@ -481,9 +479,7 @@ function detectMemory(text){
  return null;
 }
 
-/* =========================
-   PROJETS
-========================= */
+/* PROJETS */
 async function loadProjects(){
  const {data,error}=await db.from("nova_projects").select("*").order("created_at",{ascending:false});
  if(error)throw error;
@@ -515,9 +511,7 @@ $("createProject").onclick=async()=>{
  await loadProjects();toast("Projet créé !");
 };
 
-/* =========================
-   FICHIERS
-========================= */
+/* FICHIERS */
 $("attach").onclick=()=>$("fileInput").click();
 $("fileInput").onchange=e=>addFiles(Array.from(e.target.files||[]));
 async function addFiles(files){
@@ -571,9 +565,7 @@ function renderAttachments(){
  });
 }
 
-/* =========================
-   CERVEAU IA
-========================= */
+/* IA */
 function memoryPrompt(){
  return facts.length?"\nInformations mémorisées sur l'utilisateur :\n"+facts.map(f=>"- "+f.content).join("\n"):"";
 }
@@ -594,9 +586,7 @@ async function askNova(history,signal){
  return typeof answer==="string"?answer:JSON.stringify(answer);
 }
 
-/* =========================
-   ENVOI DES MESSAGES
-========================= */
+/* ENVOI DES MESSAGES */
 async function sendMessage(){
  if(isSending)return;
  const input=$("messageInput"),text=input.value.trim();
@@ -649,14 +639,10 @@ $("messageInput").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefaul
 $("messageInput").oninput=e=>{e.target.style.height="auto";e.target.style.height=Math.min(e.target.scrollHeight,180)+"px"};
 $("stop").onclick=()=>{if(abortController)abortController.abort()};
 
-/* =========================
-   RACCOURCIS DE SUGGESTION
-========================= */
+/* SUGGESTIONS */
 document.querySelectorAll("[data-prompt]").forEach(b=>b.onclick=()=>{$("messageInput").value=b.dataset.prompt;sendMessage()});
 
-/* =========================
-   VOIX
-========================= */
+/* VOIX */
 function speakText(text){
  if(!("speechSynthesis" in window)){toast("La lecture vocale n'est pas disponible.");return}
  speechSynthesis.cancel();
@@ -682,9 +668,7 @@ $("mic").onclick=()=>{
  recognition.start();toast("Tu peux parler à Nova.");
 };
 
-/* =========================
-   PROFIL ET EXPORT
-========================= */
+/* PROFIL ET EXPORT */
 $("saveProfile").onclick=async()=>{
  const name=$("displayName").value.trim();
  const {error}=await db.auth.updateUser({data:{display_name:name}});
@@ -699,11 +683,8 @@ function exportChat(){
  const url=URL.createObjectURL(blob);const a=document.createElement("a");
  a.href=url;a.download="nova-conversation.txt";a.click();URL.revokeObjectURL(url);
 }
-$("export").onclick=exportChat;
 
-/* =========================
-   DEMARRAGE FINAL
-========================= */
+/* DEMARRAGE */
 initialize().catch(e=>{console.error(e);toast("Erreur de démarrage : "+errorText(e));showAuth(true)});
 </script>
 </body>
