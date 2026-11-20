@@ -31,6 +31,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
 }
 
 h1 { margin: 0; font-size: 27px; }
@@ -56,12 +57,6 @@ button:disabled { opacity: .5; }
   background: #202127;
 }
 
-#status {
-  padding: 12px 18px;
-  color: #aaa;
-  font-size: 13px;
-}
-
 #authPanel {
   margin: 18px;
   padding: 20px;
@@ -82,9 +77,7 @@ button:disabled { opacity: .5; }
   border-radius: 12px;
 }
 
-#authPanel button {
-  margin: 4px 4px 4px 0;
-}
+#authPanel button { margin: 4px 4px 4px 0; }
 
 #settingsPanel {
   display: none;
@@ -165,6 +158,8 @@ small { color: #aaa; }
 
 @media(max-width: 480px) {
   .message { max-width: 93%; }
+  header { padding: 14px; }
+  header button { padding: 10px; }
 }
 </style>
 </head>
@@ -189,8 +184,8 @@ small { color: #aaa; }
 <section id="authPanel">
   <h2>Bienvenue chez Nova 🧠</h2>
   <p class="note">
-    Connecte-toi pour retrouver tes souvenirs sur tes appareils.
-    Si tu n'as pas encore de compte, tu peux en créer un.
+    Connecte-toi pour retrouver tes conversations
+    et tes souvenirs sur tes appareils.
   </p>
 
   <small>Adresse email</small>
@@ -224,8 +219,9 @@ small { color: #aaa; }
     placeholder="gsk_...">
 
   <p class="note">
-    Ta clé Groq reste enregistrée dans ce navigateur.
-    Ne partage jamais ton site avec cette clé enregistrée.
+    Ta clé API est conservée dans le stockage local
+    de ce navigateur. Ne partage pas ce navigateur
+    avec une personne de confiance insuffisante.
   </p>
 
   <button id="saveSettings">Enregistrer</button>
@@ -279,11 +275,17 @@ PERSONNALITÉ :
 - Tu sais être sérieuse quand la situation le demande.
 - Tu ne prétends jamais avoir fait une action que tu n'as pas faite.
 - Tu réponds de manière claire et utile.
+
+MÉMOIRE :
+- Utilise les souvenirs fournis pour personnaliser tes réponses.
+- Ne prétends jamais te souvenir d'une information absente.
+- Tu ne dois jamais inventer de souvenirs.
+- Les commandes de mémoire sont exécutées par ton application.
 `;
 
 if (!window.supabase) {
   $("status").textContent =
-    "🔴 Impossible de charger Supabase. Vérifie Internet.";
+    "🔴 Impossible de charger Supabase.";
   return;
 }
 
@@ -305,16 +307,14 @@ let settings = {
 };
 
 try {
-  const savedSettings = JSON.parse(
-    localStorage.getItem(SETTINGS_KEY) || "{}"
-  );
-
   settings = {
     ...settings,
-    ...savedSettings
+    ...JSON.parse(
+      localStorage.getItem(SETTINGS_KEY) || "{}"
+    )
   };
 } catch (error) {
-  console.error("Erreur réglages :", error);
+  console.error(error);
 }
 
 $("server").value = settings.server;
@@ -345,9 +345,7 @@ function updateInterface() {
   send.disabled = !connected || busy;
 
   if (connected) {
-    setStatus(
-      "🟢 Connecté : " + currentUser.email
-    );
+    setStatus("🟢 Connecté : " + currentUser.email);
   } else {
     setStatus("🟡 Connecte-toi à Nova.");
   }
@@ -357,7 +355,8 @@ function addMessage(content, role) {
   const element = document.createElement("div");
 
   element.className =
-    "message " + (role === "user" ? "user" : "nova");
+    "message " +
+    (role === "user" ? "user" : "nova");
 
   element.textContent = content;
 
@@ -389,6 +388,17 @@ function setBusy(value) {
   send.disabled = value || !currentUser;
 }
 
+// NORMALISATION
+
+function normalizeText(text) {
+  return String(text || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[.!?,;:]+$/g, "")
+    .trim();
+}
+
 // CONNEXION
 
 async function login() {
@@ -400,7 +410,7 @@ async function login() {
     return;
   }
 
-  setStatus("⏳ Connexion en cours...");
+  setStatus("⏳ Connexion...");
 
   const { error } =
     await supabaseClient.auth.signInWithPassword({
@@ -408,9 +418,7 @@ async function login() {
       password
     });
 
-  if (error) {
-    setStatus("🔴 " + error.message);
-  }
+  if (error) setStatus("🔴 " + error.message);
 }
 
 async function signup() {
@@ -423,7 +431,7 @@ async function signup() {
   }
 
   if (password.length < 6) {
-    setStatus("⚠️ Choisis un mot de passe d'au moins 6 caractères.");
+    setStatus("⚠️ Mot de passe : 6 caractères minimum.");
     return;
   }
 
@@ -441,9 +449,7 @@ async function signup() {
   }
 
   if (!data.session) {
-    setStatus(
-      "📩 Compte créé ! Vérifie tes emails pour confirmer ton adresse, puis connecte-toi."
-    );
+    setStatus("📩 Vérifie tes emails pour confirmer ton compte.");
   } else {
     setStatus("🟢 Compte créé !");
   }
@@ -453,53 +459,238 @@ async function logout() {
   const { error } =
     await supabaseClient.auth.signOut();
 
-  if (error) {
-    setStatus("🔴 " + error.message);
-  }
+  if (error) setStatus("🔴 " + error.message);
 }
 
-// MÉMOIRE CLOUD
+// MÉMOIRE INTELLIGENTE
+
+async function saveFact(content) {
+  const cleanContent = content.trim();
+
+  if (!cleanContent || !currentUser) {
+    throw new Error("Impossible d'enregistrer ce souvenir.");
+  }
+
+  const normalized = normalizeText(cleanContent);
+
+  if (facts.some(f => normalizeText(f) === normalized)) {
+    return false;
+  }
+
+  const { data, error } = await supabaseClient
+    .from("nova_facts")
+    .insert({
+      user_id: currentUser.id,
+      content: cleanContent
+    })
+    .select("content")
+    .single();
+
+  if (error) throw error;
+
+  facts.unshift(data.content);
+  return true;
+}
+
+async function loadFacts() {
+  if (!currentUser) return;
+
+  const { data, error } = await supabaseClient
+    .from("nova_facts")
+    .select("id, content")
+    .eq("user_id", currentUser.id)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) throw error;
+
+  facts = (data || []).map(item => item.content);
+}
+
+async function forgetFact(keyword) {
+  if (!currentUser) {
+    throw new Error("Aucun compte connecté.");
+  }
+
+  const { data, error } = await supabaseClient
+    .from("nova_facts")
+    .select("id, content")
+    .eq("user_id", currentUser.id);
+
+  if (error) throw error;
+
+  const key = normalizeText(keyword);
+
+  const matches = (data || []).filter(item =>
+    normalizeText(item.content).includes(key)
+  );
+
+  if (!matches.length) return 0;
+
+  const ids = matches.map(item => item.id);
+
+  const { error: deleteError } = await supabaseClient
+    .from("nova_facts")
+    .delete()
+    .eq("user_id", currentUser.id)
+    .in("id", ids);
+
+  if (deleteError) throw deleteError;
+
+  await loadFacts();
+
+  return matches.length;
+}
+
+async function forgetAllFacts() {
+  if (!currentUser) {
+    throw new Error("Aucun compte connecté.");
+  }
+
+  const { error } = await supabaseClient
+    .from("nova_facts")
+    .delete()
+    .eq("user_id", currentUser.id);
+
+  if (error) throw error;
+
+  facts = [];
+}
+
+// COMMANDES DE MÉMOIRE
+
+async function handleMemoryCommand(text) {
+  const message = text.trim();
+
+  const saveMatch = message.match(
+    /^(?:souviens-toi(?: bien)?(?: que)?|retiens(?: que)?|n'oublie pas que)\s+(.+)[.!?]*$/i
+  );
+
+  if (saveMatch) {
+    const fact = saveMatch[1].trim();
+
+    const saved = await saveFact(fact);
+
+    return saved
+      ? "C'est enregistré dans ma mémoire ! 🧠❤️"
+      : "Je connaissais déjà cette information ! ❤️";
+  }
+
+  if (/^(?:oublie|efface|supprime)\s+(?:tous les souvenirs|toute ma memoire|tout ce que tu sais sur moi)[.!?]*$/i.test(normalizeText(message))) {
+    await forgetAllFacts();
+
+    return "C'est fait ! J'ai effacé tous mes souvenirs personnels enregistrés. ❤️";
+  }
+
+  const forgetMatch = message.match(
+    /^(?:oublie|efface|supprime)\s+(.+)[.!?]*$/i
+  );
+
+  if (forgetMatch) {
+    const keyword = forgetMatch[1].trim();
+    const count = await forgetFact(keyword);
+
+    return count
+      ? "J'ai oublié " + count + " souvenir(s) correspondant(s). ❤️"
+      : "Je n'ai trouvé aucun souvenir correspondant.";
+  }
+
+  return null;
+}
+
+// MÉMOIRE PROPOSÉE AUTOMATIQUEMENT
+
+async function suggestMemory(text) {
+  const message = text.trim();
+
+  const patterns = [
+    /^j'aime\b/i,
+    /^j'adore\b/i,
+    /^je préfère\b/i,
+    /^je prefere\b/i,
+    /^je déteste\b/i,
+    /^je deteste\b/i,
+    /^mon animal préféré est\b/i,
+    /^ma couleur préférée est\b/i,
+    /^mon loisir préféré est\b/i,
+    /^je suis passionné(?:e)? de\b/i,
+    /^ma passion est\b/i
+  ];
+
+  if (!patterns.some(pattern => pattern.test(message))) {
+    return false;
+  }
+
+  if (message.length > 180) return false;
+
+  if (facts.some(f =>
+    normalizeText(f) === normalizeText(message)
+  )) {
+    return false;
+  }
+
+  const accepted = confirm(
+    "🧠 J'ai remarqué une information qui pourrait être utile :\n\n" +
+    message +
+    "\n\nVeux-tu que je la retienne pour nos prochaines conversations ?"
+  );
+
+  if (!accepted) return false;
+
+  await saveFact(message);
+
+  setStatus("❤️ Nouveau souvenir enregistré !");
+
+  return true;
+}
+
+// MÉMOIRE DES CONVERSATIONS
 
 async function loadCloudMemory() {
   if (!currentUser) return;
 
   setStatus("🧠 Récupération de tes souvenirs...");
 
-  const { data, error } = await supabaseClient
-    .from("nova_memories")
-    .select("content, category, created_at")
-    .eq("user_id", currentUser.id)
-    .order("created_at", { ascending: false })
-    .limit(40);
+  try {
+    await loadFacts();
 
-  if (error) {
-    console.error(error);
+    const { data, error } = await supabaseClient
+      .from("nova_memories")
+      .select("content, category, created_at")
+      .eq("user_id", currentUser.id)
+      .order("created_at", { ascending: false })
+      .limit(40);
+
+    if (error) throw error;
+
+    if (!currentUser) return;
+
+    conversation = (data || [])
+      .reverse()
+      .filter(item =>
+        ["user", "assistant"].includes(item.category)
+      )
+      .map(item => ({
+        role: item.category,
+        content: item.content
+      }));
+
+    conversation = conversation.slice(-40);
+
+    restoreMessages();
+    updateInterface();
+
+    setStatus("🟢 Nova est connectée. Mémoire synchronisée !");
+
+  } catch (error) {
+    console.error("Chargement mémoire :", error);
+
     loadedUserId = null;
-    setStatus("🔴 Erreur de lecture de la mémoire : " + error.message);
-    return;
+
+    setStatus(
+      "🔴 Erreur de chargement : " + error.message
+    );
   }
-try {
-  await loadFacts();
-} catch (error) {
-  console.error("Chargement des souvenirs :", error);
-  setStatus("⚠️ Impossible de charger les souvenirs.");
-  return;
-}
-  conversation = (data || [])
-    .reverse()
-    .filter(item =>
-      ["user", "assistant"].includes(item.category)
-    )
-    .map(item => ({
-      role: item.category,
-      content: item.content
-    }));
-
-  conversation = conversation.slice(-40);
-
-  restoreMessages();
-  updateInterface();
-  setStatus("🟢 Nova est connectée. Mémoire synchronisée !");
 }
 
 async function saveCloudExchange(userText, answer) {
@@ -524,9 +715,7 @@ async function saveCloudExchange(userText, answer) {
     .from("nova_memories")
     .insert(rows);
 
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
 }
 
 async function clearCloudMemory() {
@@ -535,11 +724,11 @@ async function clearCloudMemory() {
     return;
   }
 
-  if (!confirm("Effacer tous les souvenirs de Nova pour ce compte ?")) {
+  if (!confirm("Effacer tout l'historique des conversations ?")) {
     return;
   }
 
-  setStatus("⏳ Effacement de la mémoire...");
+  setStatus("⏳ Effacement...");
 
   const { error } = await supabaseClient
     .from("nova_memories")
@@ -547,123 +736,17 @@ async function clearCloudMemory() {
     .eq("user_id", currentUser.id);
 
   if (error) {
-    setStatus("🔴 Impossible d'effacer : " + error.message);
+    setStatus("🔴 " + error.message);
     return;
   }
 
   conversation = [];
   restoreMessages();
 
-  setStatus("🧠 Mémoire cloud effacée.");
+  setStatus("🧠 Historique effacé. Tes souvenirs personnels sont conservés.");
 }
 
-// MÉMOIRE INTELLIGENTE et se termine par loadFacts()
- 
-// MÉMOIRE INTELLIGENTE
-
-async function saveFact(content) {
-  const cleanContent = content.trim();
-
-  if (!cleanContent || !currentUser) {
-    throw new Error("Impossible d'enregistrer ce souvenir.");
-  }
-
-  const { data, error } = await supabaseClient
-    .from("nova_facts")
-    .insert({
-      user_id: currentUser.id,
-      content: cleanContent
-    })
-    .select("content")
-    .single();
-
-  if (error) throw error;
-
-  facts.push(data.content);
-}
-
-async function forgetFact(keyword) {
-  if (!currentUser) throw new Error("Aucun compte connecté.");
-
-  const { data, error } = await supabaseClient
-    .from("nova_facts")
-    .delete()
-    .eq("user_id", currentUser.id)
-    .ilike("content", "%" + keyword + "%")
-    .select("id");
-
-  if (error) throw error;
-
-  await loadFacts();
-  return data.length;
-}
-
-async function forgetAllFacts() {
-  if (!currentUser) throw new Error("Aucun compte connecté.");
-
-  const { error } = await supabaseClient
-    .from("nova_facts")
-    .delete()
-    .eq("user_id", currentUser.id);
-
-  if (error) throw error;
-
-  facts = [];
-}
-
-async function loadFacts() {
-  if (!currentUser) return;
-
-  const { data, error } = await supabaseClient
-    .from("nova_facts")
-    .select("content")
-    .eq("user_id", currentUser.id)
-    .order("created_at", { ascending: false })
-    .limit(50);
-
-  if (error) throw error;
-
-  facts = (data || []).map(item => item.content);
-}
-
-// RECONNAISSANCE DES DEMANDES DE MÉMOIRE
-
-async function handleMemoryCommand(text) {
-  const message = text.trim();
-
-  const saveMatch = message.match(
-    /^(?:souviens-toi(?: bien)?(?: que)?|retiens(?: que)?|n'oublie pas que)\s+(.+)$/i
-  );
-
-  if (saveMatch) {
-    const fact = saveMatch[1].trim();
-    await saveFact(fact);
-
-    return "C'est enregistré dans ma mémoire ! 🧠❤️ Je m'en souviendrai lors de nos prochaines conversations.";
-  }
-
-  if (/^(?:oublie|efface|supprime)\s+(?:tous les souvenirs|toute ma mémoire|tout ce que tu sais sur moi)$/i.test(message)) {
-    await forgetAllFacts();
-    return "C'est fait ! J'ai effacé tous mes souvenirs personnels enregistrés. ❤️";
-  }
-
-  const forgetMatch = message.match(
-    /^(?:oublie|efface|supprime)\s+(.+)$/i
-  );
-
-  if (forgetMatch) {
-    const keyword = forgetMatch[1].trim();
-    const count = await forgetFact(keyword);
-
-    return count > 0
-      ? "J'ai oublié " + count + " souvenir(s) correspondant(s). ❤️"
-      : "Je n'ai trouvé aucun souvenir correspondant.";
-  }
-
-  return null;
-}
-
-  // CERVEAU GROQ
+// CERVEAU GROQ
 
 async function askNova() {
   const endpoint = settings.server
@@ -673,56 +756,42 @@ async function askNova() {
   const apiKey = settings.apiKey.trim();
   const model = settings.model.trim();
 
-  if (!endpoint) {
-    throw new Error("Adresse du serveur manquante.");
+  if (!endpoint || !apiKey || !model) {
+    throw new Error("Vérifie les réglages du cerveau IA.");
   }
 
-  if (!apiKey) {
-    throw new Error("Clé API Groq manquante.");
-  }
+  const memoryContext = facts.length
+    ? "Voici les souvenirs personnels confirmés de l'utilisateur :\n" +
+      facts.map(f => "- " + f).join("\n")
+    : "Aucun souvenir personnel n'est actuellement enregistré.";
 
-  if (!model) {
-    throw new Error("Nom du modèle manquant.");
-  }
-
-  let response;
-
-  try {
-    response = await fetch(
-      endpoint + "/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + apiKey
-        },
-        body: JSON.stringify({
-          model,
-         messages: [
-  {
-    role: "system",
-    content: PERSONA
-  },
-  {
-    role: "system",
-    content: facts.length
-      ? "Voici les souvenirs importants de l'utilisateur. Utilise-les pour personnaliser tes réponses :\n" +
-        facts.map(f => "- " + f).join("\n")
-      : "Tu n'as pas encore de souvenirs personnels enregistrés."
-  },
-  ...conversation.slice(-20)
-],
-          temperature: 0.8,
-          max_completion_tokens: 500,
-          stream: false
-        })
-      }
-    );
-  } catch (error) {
-    throw new Error(
-      "Impossible de contacter Groq. Vérifie Internet ou la configuration."
-    );
-  }
+  const response = await fetch(
+    endpoint + "/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + apiKey
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "system",
+            content: PERSONA
+          },
+          {
+            role: "system",
+            content: memoryContext
+          },
+          ...conversation.slice(-20)
+        ],
+        temperature: 0.8,
+        max_completion_tokens: 700,
+        stream: false
+      })
+    }
+  );
 
   let data;
 
@@ -733,21 +802,16 @@ async function askNova() {
   }
 
   if (!response.ok) {
-    const detail =
-      data.error?.message ||
-      data.message ||
-      "Erreur inconnue";
-
     throw new Error(
-      "HTTP " + response.status + " : " + detail
+      "HTTP " + response.status + " : " +
+      (data.error?.message || "Erreur inconnue")
     );
   }
 
-  const answer =
-    data.choices?.[0]?.message?.content;
+  const answer = data.choices?.[0]?.message?.content;
 
   if (typeof answer !== "string" || !answer.trim()) {
-    throw new Error("Le serveur n'a pas envoyé de réponse.");
+    throw new Error("Le cerveau IA n'a pas envoyé de réponse.");
   }
 
   return answer.trim();
@@ -780,11 +844,17 @@ async function sendMessage(event) {
     "assistant"
   );
 
-  setStatus("🟡 Connexion au cerveau IA...");
-
   try {
-    const memoryAnswer = await handleMemoryCommand(text);
-const answer = memoryAnswer || await askNova();
+    // 1. Vérifier les commandes de mémoire
+    let answer = await handleMemoryCommand(text);
+
+    // 2. Proposer de retenir une information importante
+    if (answer === null) {
+      await suggestMemory(text);
+
+      // 3. Demander une réponse au cerveau IA
+      answer = await askNova();
+    }
 
     thinking.textContent = answer;
 
@@ -797,11 +867,14 @@ const answer = memoryAnswer || await askNova();
 
     try {
       await saveCloudExchange(text, answer);
-      setStatus("🟢 Réponse reçue et mémoire synchronisée.");
+
+      setStatus("🟢 Réponse enregistrée dans l'historique.");
+
     } catch (memoryError) {
-      console.error("Mémoire cloud :", memoryError);
+      console.error("Historique cloud :", memoryError);
+
       setStatus(
-        "⚠️ Nova a répondu, mais la mémoire cloud n'a pas été enregistrée : " +
+        "⚠️ Réponse reçue, mais historique non enregistré : " +
         memoryError.message
       );
     }
@@ -814,7 +887,7 @@ const answer = memoryAnswer || await askNova();
     conversation.pop();
     conversation.pop();
 
-    setStatus("🔴 Le cerveau IA n'a pas répondu.");
+    setStatus("🔴 Une erreur est survenue.");
   } finally {
     setBusy(false);
     input.focus();
@@ -838,7 +911,6 @@ $("saveSettings").addEventListener("click", () => {
     $("settingsPanel").classList.remove("open");
 
     setStatus("⚙️ Réglages enregistrés.");
-    input.focus();
 
   } catch (error) {
     setStatus("⚠️ Impossible d'enregistrer les réglages.");
@@ -860,46 +932,48 @@ $("clearMemory").addEventListener(
   clearCloudMemory
 );
 
-// SUIVI DE LA SESSION
+// SUIVI DE SESSION
 
 supabaseClient.auth.onAuthStateChange(
   (event, session) => {
-    currentUser = session?.user || null;
+    const newUser = session?.user || null;
+    const newId = newUser?.id || null;
 
-    if (!currentUser) {
-      loadedUserId = null;
+    if (newId !== loadedUserId) {
+      loadedUserId = newId;
+      currentUser = newUser;
+      facts = [];
       conversation = [];
+
       restoreMessages();
       updateInterface();
-      return;
-    }
 
-    updateInterface();
-
-    if (loadedUserId !== currentUser.id) {
-      loadedUserId = currentUser.id;
-      loadCloudMemory();
+      if (currentUser) {
+        loadCloudMemory();
+      }
     }
   }
 );
 
-// Vérification initiale de la session
+// SESSION INITIALE
+
 supabaseClient.auth.getSession().then(({ data, error }) => {
   if (error) {
     setStatus("🔴 Impossible de vérifier la session.");
     return;
   }
 
-  currentUser = data.session?.user || null;
+  const user = data.session?.user || null;
 
-  if (currentUser) {
+  if (user && user.id !== loadedUserId) {
+    loadedUserId = user.id;
+    currentUser = user;
     updateInterface();
+    loadCloudMemory();
 
-    if (loadedUserId !== currentUser.id) {
-      loadedUserId = currentUser.id;
-      loadCloudMemory();
-    }
-  } else {
+  } else if (!user) {
+    currentUser = null;
+    loadedUserId = null;
     updateInterface();
     restoreMessages();
   }
