@@ -18,7 +18,7 @@ body {
 }
 
 .app {
-  height: 100dvh;
+  min-height: 100dvh;
   max-width: 900px;
   margin: auto;
   display: flex;
@@ -50,7 +50,9 @@ button {
   cursor: pointer;
 }
 
-#clearMemory, #settingsButton {
+button:disabled { opacity: .5; }
+
+#clearMemory, #settingsButton, #logout {
   background: #202127;
 }
 
@@ -60,8 +62,42 @@ button {
   font-size: 13px;
 }
 
+#authPanel {
+  margin: 18px;
+  padding: 20px;
+  background: #171920;
+  border: 1px solid #292a30;
+  border-radius: 18px;
+}
+
+#authPanel h2 {
+  margin-top: 0;
+  font-size: 20px;
+}
+
+#authPanel input,
+#settingsPanel input {
+  width: 100%;
+  margin: 7px 0 13px;
+  border-radius: 12px;
+}
+
+#authPanel button {
+  margin: 4px 4px 4px 0;
+}
+
+#settingsPanel {
+  display: none;
+  padding: 16px;
+  background: #171920;
+  border-bottom: 1px solid #292a30;
+}
+
+#settingsPanel.open { display: block; }
+
 #messages {
   flex: 1;
+  min-height: 250px;
   overflow-y: auto;
   padding: 18px;
   display: flex;
@@ -116,25 +152,6 @@ input {
   font-size: 22px;
 }
 
-button:disabled {
-  opacity: .5;
-}
-
-#settingsPanel {
-  display: none;
-  padding: 16px;
-  background: #171920;
-  border-bottom: 1px solid #292a30;
-}
-
-#settingsPanel.open { display: block; }
-
-#settingsPanel input {
-  width: 100%;
-  margin: 7px 0 13px;
-  border-radius: 12px;
-}
-
 small { color: #aaa; }
 
 .note {
@@ -143,6 +160,8 @@ small { color: #aaa; }
   line-height: 1.5;
   margin: 5px 0 12px;
 }
+
+.hidden { display: none !important; }
 
 @media(max-width: 480px) {
   .message { max-width: 93%; }
@@ -163,8 +182,30 @@ small { color: #aaa; }
   <div>
     <button id="settingsButton">⚙️</button>
     <button id="clearMemory">🗑️</button>
+    <button id="logout" class="hidden">Sortir</button>
   </div>
 </header>
+
+<section id="authPanel">
+  <h2>Bienvenue chez Nova 🧠</h2>
+  <p class="note">
+    Connecte-toi pour retrouver tes souvenirs sur tes appareils.
+    Si tu n'as pas encore de compte, tu peux en créer un.
+  </p>
+
+  <small>Adresse email</small>
+  <input id="email" type="email"
+    placeholder="ton@email.com"
+    autocomplete="email">
+
+  <small>Mot de passe</small>
+  <input id="password" type="password"
+    placeholder="Ton mot de passe"
+    autocomplete="current-password">
+
+  <button id="loginButton">Se connecter</button>
+  <button id="signupButton">Créer un compte</button>
+</section>
 
 <section id="settingsPanel">
 
@@ -176,32 +217,35 @@ small { color: #aaa; }
   <input id="model"
     placeholder="openai/gpt-oss-20b">
 
-  <small>Clé API</small>
+  <small>Clé API Groq</small>
   <input id="apiKey"
     type="password"
     autocomplete="off"
     placeholder="gsk_...">
 
   <p class="note">
-    Ta clé reste enregistrée dans ce navigateur.
-    Ne partage jamais ce site avec ta clé enregistrée.
+    Ta clé Groq reste enregistrée dans ce navigateur.
+    Ne partage jamais ton site avec cette clé enregistrée.
   </p>
 
   <button id="saveSettings">Enregistrer</button>
 </section>
 
-<div id="status">🟡 Configure ton cerveau IA.</div>
+<div id="status">🟡 Connecte-toi à Nova.</div>
 
 <main id="messages" aria-live="polite"></main>
 
 <form class="input-area" id="chatForm">
   <input id="input"
     placeholder="Écris à Nova..."
-    autocomplete="off">
-  <button id="send" type="submit">↑</button>
+    autocomplete="off"
+    disabled>
+  <button id="send" type="submit" disabled>↑</button>
 </form>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 (() => {
@@ -210,11 +254,19 @@ small { color: #aaa; }
 
 const $ = id => document.getElementById(id);
 
-const MEMORY_KEY = "nova_memory";
 const SETTINGS_KEY = "nova_settings";
 
-const DEFAULT_SERVER = "https://api.groq.com/openai/v1";
-const DEFAULT_MODEL = "openai/gpt-oss-20b";
+const SUPABASE_URL =
+  "https://yvkldxqrgnigxesoxycc.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_DwDUh-Le_xR6mJnojXdL5w_QI-00AZT";
+
+const DEFAULT_SERVER =
+  "https://api.groq.com/openai/v1";
+
+const DEFAULT_MODEL =
+  "openai/gpt-oss-20b";
 
 const PERSONA = `
 Tu es Nova, une intelligence artificielle personnelle.
@@ -229,8 +281,21 @@ PERSONNALITÉ :
 - Tu réponds de manière claire et utile.
 `;
 
+if (!window.supabase) {
+  $("status").textContent =
+    "🔴 Impossible de charger Supabase. Vérifie Internet.";
+  return;
+}
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
 let conversation = [];
 let busy = false;
+let currentUser = null;
+let loadedUserId = null;
 
 let settings = {
   server: DEFAULT_SERVER,
@@ -239,18 +304,6 @@ let settings = {
 };
 
 try {
-  const savedMemory = JSON.parse(
-    localStorage.getItem(MEMORY_KEY) || "[]"
-  );
-
-  if (Array.isArray(savedMemory)) {
-    conversation = savedMemory.filter(item =>
-      item &&
-      ["user", "assistant"].includes(item.role) &&
-      typeof item.content === "string"
-    ).slice(-40);
-  }
-
   const savedSettings = JSON.parse(
     localStorage.getItem(SETTINGS_KEY) || "{}"
   );
@@ -259,9 +312,8 @@ try {
     ...settings,
     ...savedSettings
   };
-
 } catch (error) {
-  console.error("Erreur de mémoire :", error);
+  console.error("Erreur réglages :", error);
 }
 
 $("server").value = settings.server;
@@ -273,14 +325,30 @@ const input = $("input");
 const send = $("send");
 const status = $("status");
 
-function saveMemory() {
-  try {
-    localStorage.setItem(
-      MEMORY_KEY,
-      JSON.stringify(conversation.slice(-40))
+function setStatus(text) {
+  status.textContent = text;
+}
+
+function updateInterface() {
+  const connected = !!currentUser;
+
+  $("authPanel").classList.toggle(
+    "hidden", connected
+  );
+
+  $("logout").classList.toggle(
+    "hidden", !connected
+  );
+
+  input.disabled = !connected || busy;
+  send.disabled = !connected || busy;
+
+  if (connected) {
+    setStatus(
+      "🟢 Connecté : " + currentUser.email
     );
-  } catch (error) {
-    console.error("Mémoire indisponible :", error);
+  } else {
+    setStatus("🟡 Connecte-toi à Nova.");
   }
 }
 
@@ -316,12 +384,175 @@ function restoreMessages() {
 
 function setBusy(value) {
   busy = value;
-  send.disabled = value;
-  input.disabled = false;
+  input.disabled = value || !currentUser;
+  send.disabled = value || !currentUser;
 }
 
-async function askNova() {
+// CONNEXION
 
+async function login() {
+  const email = $("email").value.trim();
+  const password = $("password").value;
+
+  if (!email || !password) {
+    setStatus("⚠️ Remplis ton email et ton mot de passe.");
+    return;
+  }
+
+  setStatus("⏳ Connexion en cours...");
+
+  const { error } =
+    await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
+
+  if (error) {
+    setStatus("🔴 " + error.message);
+  }
+}
+
+async function signup() {
+  const email = $("email").value.trim();
+  const password = $("password").value;
+
+  if (!email || !password) {
+    setStatus("⚠️ Remplis ton email et ton mot de passe.");
+    return;
+  }
+
+  if (password.length < 6) {
+    setStatus("⚠️ Choisis un mot de passe d'au moins 6 caractères.");
+    return;
+  }
+
+  setStatus("⏳ Création du compte...");
+
+  const { data, error } =
+    await supabaseClient.auth.signUp({
+      email,
+      password
+    });
+
+  if (error) {
+    setStatus("🔴 " + error.message);
+    return;
+  }
+
+  if (!data.session) {
+    setStatus(
+      "📩 Compte créé ! Vérifie tes emails pour confirmer ton adresse, puis connecte-toi."
+    );
+  } else {
+    setStatus("🟢 Compte créé !");
+  }
+}
+
+async function logout() {
+  const { error } =
+    await supabaseClient.auth.signOut();
+
+  if (error) {
+    setStatus("🔴 " + error.message);
+  }
+}
+
+// MÉMOIRE CLOUD
+
+async function loadCloudMemory() {
+  if (!currentUser) return;
+
+  setStatus("🧠 Récupération de tes souvenirs...");
+
+  const { data, error } = await supabaseClient
+    .from("nova_memories")
+    .select("content, category, created_at")
+    .eq("user_id", currentUser.id)
+    .order("created_at", { ascending: false })
+    .limit(40);
+
+  if (error) {
+    console.error(error);
+    loadedUserId = null;
+    setStatus("🔴 Erreur de lecture de la mémoire : " + error.message);
+    return;
+  }
+
+  conversation = (data || [])
+    .reverse()
+    .filter(item =>
+      ["user", "assistant"].includes(item.category)
+    )
+    .map(item => ({
+      role: item.category,
+      content: item.content
+    }));
+
+  conversation = conversation.slice(-40);
+
+  restoreMessages();
+  updateInterface();
+  setStatus("🟢 Nova est connectée. Mémoire synchronisée !");
+}
+
+async function saveCloudExchange(userText, answer) {
+  if (!currentUser) {
+    throw new Error("Aucun compte connecté.");
+  }
+
+  const rows = [
+    {
+      user_id: currentUser.id,
+      content: userText,
+      category: "user"
+    },
+    {
+      user_id: currentUser.id,
+      content: answer,
+      category: "assistant"
+    }
+  ];
+
+  const { error } = await supabaseClient
+    .from("nova_memories")
+    .insert(rows);
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function clearCloudMemory() {
+  if (!currentUser) {
+    setStatus("⚠️ Connecte-toi d'abord.");
+    return;
+  }
+
+  if (!confirm("Effacer tous les souvenirs de Nova pour ce compte ?")) {
+    return;
+  }
+
+  setStatus("⏳ Effacement de la mémoire...");
+
+  const { error } = await supabaseClient
+    .from("nova_memories")
+    .delete()
+    .eq("user_id", currentUser.id);
+
+  if (error) {
+    setStatus("🔴 Impossible d'effacer : " + error.message);
+    return;
+  }
+
+  conversation = [];
+  restoreMessages();
+
+  setStatus("🧠 Mémoire cloud effacée.");
+}
+
+// CERVEAU GROQ
+
+async function askNova() {
   const endpoint = settings.server
     .trim()
     .replace(/\/+$/, "");
@@ -334,7 +565,7 @@ async function askNova() {
   }
 
   if (!apiKey) {
-    throw new Error("Clé API manquante.");
+    throw new Error("Clé API Groq manquante.");
   }
 
   if (!model) {
@@ -348,15 +579,12 @@ async function askNova() {
       endpoint + "/chat/completions",
       {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer " + apiKey
         },
-
         body: JSON.stringify({
-          model: model,
-
+          model,
           messages: [
             {
               role: "system",
@@ -364,17 +592,15 @@ async function askNova() {
             },
             ...conversation.slice(-20)
           ],
-
           temperature: 0.8,
           max_completion_tokens: 500,
           stream: false
         })
       }
     );
-
   } catch (error) {
     throw new Error(
-      "Impossible de contacter le serveur. Vérifie Internet ou la configuration CORS."
+      "Impossible de contacter Groq. Vérifie Internet ou la configuration."
     );
   }
 
@@ -383,9 +609,7 @@ async function askNova() {
   try {
     data = await response.json();
   } catch (error) {
-    throw new Error(
-      "Le serveur a envoyé une réponse illisible."
-    );
+    throw new Error("Réponse du serveur illisible.");
   }
 
   if (!response.ok) {
@@ -403,21 +627,20 @@ async function askNova() {
     data.choices?.[0]?.message?.content;
 
   if (typeof answer !== "string" || !answer.trim()) {
-    throw new Error(
-      "Le serveur n'a pas envoyé de réponse."
-    );
+    throw new Error("Le serveur n'a pas envoyé de réponse.");
   }
 
   return answer.trim();
 }
 
-async function sendMessage(event) {
+// DISCUSSION
 
+async function sendMessage(event) {
   event.preventDefault();
 
   const text = input.value.trim();
 
-  if (!text || busy) return;
+  if (!text || busy || !currentUser) return;
 
   input.value = "";
 
@@ -429,7 +652,6 @@ async function sendMessage(event) {
   });
 
   conversation = conversation.slice(-40);
-  saveMemory();
 
   setBusy(true);
 
@@ -438,10 +660,9 @@ async function sendMessage(event) {
     "assistant"
   );
 
-  status.textContent = "🟡 Connexion au cerveau IA...";
+  setStatus("🟡 Connexion au cerveau IA...");
 
   try {
-
     const answer = await askNova();
 
     thinking.textContent = answer;
@@ -452,98 +673,116 @@ async function sendMessage(event) {
     });
 
     conversation = conversation.slice(-40);
-    saveMemory();
 
-    status.textContent = "🟢 Nova est connectée.";
+    try {
+      await saveCloudExchange(text, answer);
+      setStatus("🟢 Réponse reçue et mémoire synchronisée.");
+    } catch (memoryError) {
+      console.error("Mémoire cloud :", memoryError);
+      setStatus(
+        "⚠️ Nova a répondu, mais la mémoire cloud n'a pas été enregistrée : " +
+        memoryError.message
+      );
+    }
 
   } catch (error) {
-
     console.error("Nova :", error);
 
-    thinking.textContent =
-      "⚠️ " + error.message;
+    thinking.textContent = "⚠️ " + error.message;
 
-    // Retirer le message utilisateur qui a échoué.
     conversation.pop();
-    saveMemory();
+    conversation.pop();
 
-    status.textContent =
-      "🔴 Le cerveau IA n'a pas répondu.";
-
+    setStatus("🔴 Le cerveau IA n'a pas répondu.");
   } finally {
-
     setBusy(false);
     input.focus();
     messages.scrollTop = messages.scrollHeight;
-
   }
 }
 
-$("chatForm").addEventListener(
-  "submit",
-  sendMessage
-);
+// RÉGLAGES
 
-$("settingsButton").addEventListener(
-  "click",
-  () => {
-    $("settingsPanel").classList.toggle("open");
+$("saveSettings").addEventListener("click", () => {
+  settings.server = $("server").value.trim();
+  settings.model = $("model").value.trim();
+  settings.apiKey = $("apiKey").value.trim();
+
+  try {
+    localStorage.setItem(
+      SETTINGS_KEY,
+      JSON.stringify(settings)
+    );
+
+    $("settingsPanel").classList.remove("open");
+
+    setStatus("⚙️ Réglages enregistrés.");
+    input.focus();
+
+  } catch (error) {
+    setStatus("⚠️ Impossible d'enregistrer les réglages.");
   }
-);
+});
 
-$("saveSettings").addEventListener(
-  "click",
-  () => {
+$("settingsButton").addEventListener("click", () => {
+  $("settingsPanel").classList.toggle("open");
+});
 
-    settings.server = $("server").value.trim();
-    settings.model = $("model").value.trim();
-    settings.apiKey = $("apiKey").value.trim();
+$("chatForm").addEventListener("submit", sendMessage);
 
-    try {
-      localStorage.setItem(
-        SETTINGS_KEY,
-        JSON.stringify(settings)
-      );
-
-      $("settingsPanel").classList.remove("open");
-
-      status.textContent =
-        "⚙️ Réglages enregistrés. Envoie un message pour tester.";
-
-      input.focus();
-
-    } catch (error) {
-      status.textContent =
-        "⚠️ Impossible d'enregistrer les réglages.";
-    }
-  }
-);
+$("loginButton").addEventListener("click", login);
+$("signupButton").addEventListener("click", signup);
+$("logout").addEventListener("click", logout);
 
 $("clearMemory").addEventListener(
   "click",
-  () => {
+  clearCloudMemory
+);
 
-    if (!confirm("Effacer toute la mémoire de Nova ?")) {
+// SUIVI DE LA SESSION
+
+supabaseClient.auth.onAuthStateChange(
+  (event, session) => {
+    currentUser = session?.user || null;
+
+    if (!currentUser) {
+      loadedUserId = null;
+      conversation = [];
+      restoreMessages();
+      updateInterface();
       return;
     }
 
-    conversation = [];
+    updateInterface();
 
-    localStorage.removeItem(MEMORY_KEY);
-
-    restoreMessages();
-
-    status.textContent = "🧠 Mémoire effacée.";
-
+    if (loadedUserId !== currentUser.id) {
+      loadedUserId = currentUser.id;
+      loadCloudMemory();
+    }
   }
 );
 
-restoreMessages();
+// Vérification initiale de la session
+supabaseClient.auth.getSession().then(({ data, error }) => {
+  if (error) {
+    setStatus("🔴 Impossible de vérifier la session.");
+    return;
+  }
 
-input.disabled = false;
-send.disabled = false;
+  currentUser = data.session?.user || null;
 
-input.focus();
+  if (currentUser) {
+    updateInterface();
+
+    if (loadedUserId !== currentUser.id) {
+      loadedUserId = currentUser.id;
+      loadCloudMemory();
+    }
+  } else {
+    updateInterface();
+    restoreMessages();
+  }
+});
 
 })();
 </script>
