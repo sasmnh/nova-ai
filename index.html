@@ -558,6 +558,111 @@ async function clearCloudMemory() {
 }
 
 // MÉMOIRE INTELLIGENTE et se termine par loadFacts()
+ 
+// MÉMOIRE INTELLIGENTE
+
+async function saveFact(content) {
+  const cleanContent = content.trim();
+
+  if (!cleanContent || !currentUser) {
+    throw new Error("Impossible d'enregistrer ce souvenir.");
+  }
+
+  const { data, error } = await supabaseClient
+    .from("nova_facts")
+    .insert({
+      user_id: currentUser.id,
+      content: cleanContent
+    })
+    .select("content")
+    .single();
+
+  if (error) throw error;
+
+  facts.push(data.content);
+}
+
+async function forgetFact(keyword) {
+  if (!currentUser) throw new Error("Aucun compte connecté.");
+
+  const { data, error } = await supabaseClient
+    .from("nova_facts")
+    .delete()
+    .eq("user_id", currentUser.id)
+    .ilike("content", "%" + keyword + "%")
+    .select("id");
+
+  if (error) throw error;
+
+  await loadFacts();
+  return data.length;
+}
+
+async function forgetAllFacts() {
+  if (!currentUser) throw new Error("Aucun compte connecté.");
+
+  const { error } = await supabaseClient
+    .from("nova_facts")
+    .delete()
+    .eq("user_id", currentUser.id);
+
+  if (error) throw error;
+
+  facts = [];
+}
+
+async function loadFacts() {
+  if (!currentUser) return;
+
+  const { data, error } = await supabaseClient
+    .from("nova_facts")
+    .select("content")
+    .eq("user_id", currentUser.id)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) throw error;
+
+  facts = (data || []).map(item => item.content);
+}
+
+// RECONNAISSANCE DES DEMANDES DE MÉMOIRE
+
+async function handleMemoryCommand(text) {
+  const message = text.trim();
+
+  const saveMatch = message.match(
+    /^(?:souviens-toi(?: bien)?(?: que)?|retiens(?: que)?|n'oublie pas que)\s+(.+)$/i
+  );
+
+  if (saveMatch) {
+    const fact = saveMatch[1].trim();
+    await saveFact(fact);
+
+    return "C'est enregistré dans ma mémoire ! 🧠❤️ Je m'en souviendrai lors de nos prochaines conversations.";
+  }
+
+  if (/^(?:oublie|efface|supprime)\s+(?:tous les souvenirs|toute ma mémoire|tout ce que tu sais sur moi)$/i.test(message)) {
+    await forgetAllFacts();
+    return "C'est fait ! J'ai effacé tous mes souvenirs personnels enregistrés. ❤️";
+  }
+
+  const forgetMatch = message.match(
+    /^(?:oublie|efface|supprime)\s+(.+)$/i
+  );
+
+  if (forgetMatch) {
+    const keyword = forgetMatch[1].trim();
+    const count = await forgetFact(keyword);
+
+    return count > 0
+      ? "J'ai oublié " + count + " souvenir(s) correspondant(s). ❤️"
+      : "Je n'ai trouvé aucun souvenir correspondant.";
+  }
+
+  return null;
+}
+
   // CERVEAU GROQ
 
 async function askNova() {
