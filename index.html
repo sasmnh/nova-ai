@@ -593,13 +593,20 @@ async function askNova() {
         },
         body: JSON.stringify({
           model,
-          messages: [
-            {
-              role: "system",
-              content: PERSONA
-            },
-            ...conversation.slice(-20)
-          ],
+         messages: [
+  {
+    role: "system",
+    content: PERSONA
+  },
+  {
+    role: "system",
+    content: facts.length
+      ? "Voici les souvenirs importants de l'utilisateur. Utilise-les pour personnaliser tes réponses :\n" +
+        facts.map(f => "- " + f).join("\n")
+      : "Tu n'as pas encore de souvenirs personnels enregistrés."
+  },
+  ...conversation.slice(-20)
+],
           temperature: 0.8,
           max_completion_tokens: 500,
           stream: false
