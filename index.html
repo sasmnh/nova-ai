@@ -233,6 +233,28 @@ body.light.wallpaper-active .main{
  <section class="view" id="settingsView"><div class="page">
   <h2>⚙️ Paramètres</h2>
   <div class="panel-card"><h2>Profil</h2><input class="field" id="displayName" placeholder="Nom à afficher"><button class="primary" id="saveProfile">Enregistrer</button></div>
+  <div class="panel-card">
+ <h2>🎨 Personnalisation</h2>
+ <p>Choisis l'apparence de ton espace Nova.</p>
+
+ <label for="wallpaperInput">Importer ton propre fond d'écran</label>
+ <input class="field" type="file" id="wallpaperInput" accept="image/png,image/jpeg,image/webp">
+
+ <div class="wallpaper-preview" id="wallpaperPreview"></div>
+
+ <button class="primary" id="applyWallpaper">Appliquer mon image</button>
+ <button class="secondary" id="removeWallpaper">Fond d'origine</button>
+
+ <p>Tu peux aussi choisir une couleur :</p>
+
+ <div style="display:flex;gap:10px;flex-wrap:wrap">
+  <button class="secondary wallpaper-color" data-color="#090b12">🌑 Nuit</button>
+  <button class="secondary wallpaper-color" data-color="#242044">💜 Violet</button>
+  <button class="secondary wallpaper-color" data-color="#183b35">🌿 Vert</button>
+  <button class="secondary wallpaper-color" data-color="#382238">🌸 Rose</button>
+  <button class="secondary wallpaper-color" data-color="#18334d">🌊 Bleu</button>
+ </div>
+</div>
   <div class="panel-card"><h2>Intelligence artificielle</h2><label for="modelSelect">Modèle utilisé pour les conversations</label><select class="field" id="modelSelect"><option value="openai/gpt-oss-20b">GPT OSS 20B</option><option value="llama-3.3-70b-versatile">Llama 3.3 70B</option></select><p>Pour les images, Nova essaie d'utiliser le modèle de vision configuré dans le code.</p></div>
   <div class="panel-card"><h2>Préférences</h2><label><input type="checkbox" id="autoSpeak"> Lire les réponses à voix haute</label><br><br><label><input type="checkbox" id="autoMemory" checked> Mémoriser automatiquement les informations utiles</label></div>
   <div class="panel-card"><h2>Mes données</h2><button class="secondary" id="export">Exporter cette conversation</button> <button class="danger" id="clearMemory">Effacer ma mémoire</button></div>
@@ -329,6 +351,7 @@ db.auth.onAuthStateChange((event,session)=>{
 async function startApp(){
  if(appStarted)return;
  appStarted=true;
+ applySavedWallpaper();
  $("profileEmail").textContent=user.email||"Compte Nova";
  $("profileName").textContent=user.user_metadata?.display_name||"Mon compte";
  $("displayName").value=user.user_metadata?.display_name||"";
@@ -691,7 +714,80 @@ $("mic").onclick=()=>{
  recognition.onend=()=>{recognition=null};
  recognition.start();toast("Tu peux parler à Nova.");
 };
+/* PERSONNALISATION DU FOND */
+let selectedWallpaper=null;
 
+function wallpaperKey(){
+ return "nova_wallpaper_"+(user?.id||"guest");
+}
+
+function applySavedWallpaper(){
+ const saved=localStorage.getItem(wallpaperKey());
+ if(saved){
+  document.documentElement.style.setProperty(
+   "--nova-wallpaper",
+   `linear-gradient(#090b1270,#090b1270),url("${saved}")`
+  );
+  document.body.classList.add("wallpaper-active");
+  $("wallpaperPreview").style.backgroundImage=`url("${saved}")`;
+ }else{
+  document.documentElement.style.removeProperty("--nova-wallpaper");
+  document.body.classList.remove("wallpaper-active");
+  $("wallpaperPreview").style.backgroundImage="none";
+ }
+}
+
+$("wallpaperInput").onchange=async e=>{
+ const file=e.target.files[0];
+ if(!file)return;
+ if(!["image/jpeg","image/png","image/webp"].includes(file.type)){
+  toast("Choisis une image JPG, PNG ou WEBP.");
+  return;
+ }
+ if(file.size>2*1024*1024){
+  toast("Image trop volumineuse : maximum 2 Mo.");
+  return;
+ }
+ const reader=new FileReader();
+ reader.onload=()=>{
+  selectedWallpaper=reader.result;
+  $("wallpaperPreview").style.backgroundImage=`url("${selectedWallpaper}")`;
+ };
+ reader.readAsDataURL(file);
+};
+
+$("applyWallpaper").onclick=()=>{
+ if(!selectedWallpaper){
+  toast("Choisis d'abord une image.");
+  return;
+ }
+ try{
+  localStorage.setItem(wallpaperKey(),selectedWallpaper);
+  applySavedWallpaper();
+  selectedWallpaper=null;
+  $("wallpaperInput").value="";
+  toast("Ton fond d'écran est enregistré ! ✨");
+ }catch(e){
+  toast("Impossible d'enregistrer cette image. Essaie une image plus petite.");
+ }
+};
+
+$("removeWallpaper").onclick=()=>{
+ localStorage.removeItem(wallpaperKey());
+ selectedWallpaper=null;
+ $("wallpaperInput").value="";
+ applySavedWallpaper();
+ toast("Fond d'origine restauré.");
+};
+
+document.querySelectorAll(".wallpaper-color").forEach(button=>{
+ button.onclick=()=>{
+  document.body.style.backgroundColor=button.dataset.color;
+  document.documentElement.style.setProperty("--bg",button.dataset.color);
+  saveSetting("custom_background_color",button.dataset.color);
+  toast("Couleur modifiée !");
+ };
+});
 /* PROFIL ET EXPORT */
 $("saveProfile").onclick=async()=>{
  const name=$("displayName").value.trim();
