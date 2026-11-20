@@ -3,481 +3,1115 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nova AI</title>
-<meta name="description" content="Nova, ton assistant intelligent personnel.">
-<meta name="robots" content="index, follow">
-<link rel="canonical" href="https://sasmnh.github.io/nova-ai/">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
 <style>
+:root{
+  --bg:#08090d;
+  --panel:#11131b;
+  --panel2:#191c26;
+  --border:#292d39;
+  --text:#f5f5f7;
+  --muted:#999eaa;
+  --accent:#8065f5;
+}
 *{box-sizing:border-box}
-:root{--bg:#08090d;--panel:#11131b;--panel2:#191c26;--border:#292d39;--text:#f5f5f7;--muted:#999eaa;--accent:#8065f5}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:Arial,Helvetica,sans-serif;height:100vh;
+}
 button,input,textarea{font:inherit}
 button{cursor:pointer}
-button:disabled{opacity:.5;cursor:not-allowed}
 .hidden{display:none!important}
-.auth-page{min-height:100vh;display:grid;place-items:center;padding:20px}
-.auth-card{width:100%;max-width:390px;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:28px}
-.logo{text-align:center;font-size:42px}
-.auth-card h1{text-align:center;margin:8px 0}
-.subtitle{text-align:center;color:var(--muted);font-size:14px;margin-bottom:24px}
-.field{margin:14px 0}
-.field label{display:block;font-size:13px;color:#bbb;margin-bottom:7px}
-.field input{width:100%;padding:13px;border:1px solid var(--border);border-radius:10px;background:#090b11;color:white}
-.primary{width:100%;padding:13px;border:0;border-radius:10px;background:var(--accent);color:white;font-weight:bold;margin-top:10px}
-.secondary{width:100%;padding:11px;border:1px solid var(--border);border-radius:10px;background:#20232d;color:white;margin-top:9px}
-.link{border:0;background:none;color:#b3a4ff;text-decoration:underline;font-size:13px}
-.auth-links{display:flex;justify-content:space-between;gap:10px;margin-top:18px}
-#authMessage{font-size:13px;color:#c5baff;line-height:1.5;margin-top:14px}
-.app{height:100dvh;display:flex;overflow:hidden}
-.sidebar{width:270px;flex-shrink:0;background:#10121a;border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px;transition:width .2s,padding .2s;overflow:hidden}
-.sidebar.collapsed{width:0;padding-left:0;padding-right:0;border:0}
-.side-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.brand{font-size:21px;font-weight:bold;white-space:nowrap}
-.side-btn{border:0;background:#222530;color:white;border-radius:9px;padding:10px}
-.new-chat{width:100%;display:flex;gap:10px;align-items:center;text-align:left;background:#30294d;color:white;border:1px solid #514477;border-radius:10px;padding:12px;margin-bottom:10px}
-.nav-btn{width:100%;display:flex;gap:10px;align-items:center;text-align:left;background:transparent;color:#ddd;border:0;border-radius:9px;padding:11px;margin:2px 0}
-.nav-btn:hover,.chat-item:hover{background:#20232d}
-.section-label{font-size:11px;color:#777f8e;font-weight:bold;margin:20px 8px 8px}
-.side-list{overflow-y:auto;flex:1;min-height:0}
-.chat-item{display:flex;align-items:center;gap:7px;border-radius:8px;padding:9px 7px;color:#ddd;font-size:13px}
-.chat-item.active{background:#27243a}
-.chat-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;cursor:pointer}
-.delete-chat{border:0;background:none;color:#888;padding:3px}
-.side-bottom{border-top:1px solid var(--border);padding-top:10px}
-.user-line{font-size:11px;color:#9ca2af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px}
-.main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
-.topbar{height:60px;flex-shrink:0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px}
-.top-left,.top-right{display:flex;align-items:center;gap:10px}
-.topbar button{border:1px solid var(--border);background:#191c25;color:white;border-radius:9px;padding:9px 11px}
-.top-title{font-weight:bold}
-.content{flex:1;overflow-y:auto;padding:25px 16px}
-.messages{max-width:800px;width:100%;margin:auto;display:flex;flex-direction:column;gap:18px}
-.welcome{text-align:center;margin:10vh auto 30px;max-width:550px}
-.welcome .big{font-size:55px}
-.welcome h1{font-size:27px}
-.welcome p{color:var(--muted);line-height:1.5}
-.message{max-width:85%;padding:13px 16px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}
-.message.user{align-self:flex-end;background:#6650cb}
-.message.assistant{align-self:flex-start;background:var(--panel2);border:1px solid var(--border)}
-.message-label{font-size:10px;color:#b7b7c3;margin-bottom:6px}
-.composer-wrap{padding:12px 16px 20px}
-.composer{max-width:800px;margin:auto;border:1px solid #3a3e4c;background:#171a23;border-radius:17px;padding:9px;display:flex;gap:8px;align-items:end}
-.composer textarea{flex:1;resize:none;min-height:42px;max-height:150px;background:transparent;border:0;outline:0;color:white;padding:11px}
-.send{height:42px;width:44px;border:0;border-radius:11px;background:var(--accent);color:white;font-size:20px}
-.status{text-align:center;font-size:11px;color:#858b98;margin-bottom:8px}
-.panel{max-width:800px;margin:0 auto 18px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px}
-.panel h2{font-size:19px;margin-top:0}
-.panel input,.panel textarea{width:100%;padding:11px;border:1px solid var(--border);border-radius:9px;background:#090b11;color:white;margin:7px 0 12px}
-.panel button{background:#292d3a;border:1px solid #414657;color:white;border-radius:8px;padding:9px 12px;margin:4px}
-.item-row{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding:10px 0;font-size:13px}
-.item-row span{overflow-wrap:anywhere}
-.small-muted{font-size:12px;color:var(--muted)}
-@media(max-width:650px){.sidebar{position:absolute;z-index:5;top:0;bottom:0;left:0;box-shadow:10px 0 30px #0008}.sidebar.collapsed{width:0}.message{max-width:94%}#emailLabel{display:none}}
+
+/* CONNEXION */
+#authScreen{
+  min-height:100vh;display:flex;align-items:center;
+  justify-content:center;padding:20px;
+}
+.auth-card{
+  width:100%;max-width:390px;background:var(--panel);
+  border:1px solid var(--border);border-radius:20px;
+  padding:28px;
+}
+.logo{text-align:center;font-size:36px;font-weight:bold;margin-bottom:8px}
+.auth-card p{text-align:center;color:var(--muted)}
+.auth-card input{
+  width:100%;padding:14px;margin:8px 0;
+  border-radius:10px;border:1px solid var(--border);
+  background:var(--panel2);color:white;
+}
+.primary{
+  background:var(--accent);color:white;border:0;
+  border-radius:10px;padding:13px 18px;font-weight:bold;
+}
+.auth-card .primary{width:100%;margin-top:12px}
+.auth-links{
+  display:flex;justify-content:space-between;gap:10px;
+  margin-top:16px;flex-wrap:wrap;
+}
+.auth-links button{
+  background:none;border:0;color:#b5a7ff;
+}
+
+/* APPLICATION */
+#app{height:100vh;display:flex;overflow:hidden}
+.sidebar{
+  width:270px;min-width:270px;background:var(--panel);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:15px;
+}
+.side-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.brand{font-size:23px;font-weight:bold}
+.new-chat{
+  width:100%;padding:12px;background:var(--panel2);
+  color:white;border:1px solid var(--border);
+  border-radius:10px;text-align:left;margin-bottom:20px;
+}
+.side-label{
+  color:var(--muted);font-size:12px;
+  text-transform:uppercase;margin:12px 5px 8px;
+}
+.side-list{overflow-y:auto;min-height:0}
+.side-item{
+  width:100%;display:block;text-align:left;
+  padding:10px;border:0;border-radius:8px;
+  color:var(--text);background:transparent;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.side-item:hover,.side-item.active{background:var(--panel2)}
+.side-bottom{margin-top:auto;border-top:1px solid var(--border);padding-top:12px}
+.user-info{font-size:12px;color:var(--muted);padding:8px;overflow-wrap:anywhere}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{
+  height:60px;min-height:60px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;padding:0 20px;
+}
+.topbar h2{font-size:16px;font-weight:600}
+.icon-button{
+  background:transparent;border:0;color:white;
+  font-size:20px;padding:7px;border-radius:8px;
+}
+.icon-button:hover{background:var(--panel2)}
+#menuButton{display:none}
+.messages{
+  flex:1;overflow-y:auto;padding:25px 16px;
+  display:flex;flex-direction:column;gap:20px;
+}
+.welcome{
+  margin:auto;text-align:center;max-width:550px;
+}
+.welcome h1{font-size:32px}
+.welcome p{color:var(--muted)}
+.message{
+  width:100%;max-width:800px;margin:0 auto;
+  display:flex;gap:12px;align-items:flex-start;
+}
+.avatar{
+  width:32px;height:32px;min-width:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--panel2);
+}
+.message-content{
+  white-space:pre-wrap;overflow-wrap:anywhere;
+  line-height:1.65;padding-top:5px;min-width:0;
+}
+.message.user .message-content{
+  background:var(--panel2);padding:12px 15px;
+  border-radius:15px;margin-left:auto;max-width:85%;
+}
+.message.user{justify-content:flex-end}
+.message.user .avatar{order:2;background:#423477}
+.message.assistant .avatar{background:#342b61}
+.message-content a{color:#b5a7ff}
+
+/* COMPOSER */
+.composer-wrap{
+  padding:12px 16px 20px;
+  width:100%;max-width:850px;margin:0 auto;
+}
+.status{text-align:center;color:var(--muted);font-size:12px;margin-bottom:10px}
+.composer{
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:18px;padding:10px;display:flex;
+  align-items:flex-end;gap:8px;
+}
+.composer textarea{
+  flex:1;min-width:0;resize:none;max-height:160px;
+  background:transparent;border:0;outline:0;
+  color:white;padding:10px;line-height:1.5;
+}
+.composer button{
+  border:0;border-radius:10px;padding:10px 13px;
+  color:white;background:var(--accent);
+}
+.composer button:disabled{opacity:.4;cursor:not-allowed}
+.attach-button{background:transparent!important;font-size:20px}
+.attachment-list{
+  display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;
+}
+.attachment-chip{
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:10px;padding:8px 10px;font-size:12px;
+  display:flex;align-items:center;gap:8px;max-width:100%;
+}
+.attachment-chip span{overflow-wrap:anywhere}
+.attachment-chip button{
+  color:#ff9999;background:transparent;border:0;font-size:16px;
+}
+
+/* PANNEAUX */
+.panel{
+  position:fixed;inset:0;background:#0009;z-index:10;
+  display:flex;align-items:center;justify-content:center;padding:15px;
+}
+.panel-card{
+  width:100%;max-width:480px;max-height:85vh;overflow:auto;
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:18px;padding:22px;
+}
+.panel-card h2{margin-top:0}
+.panel-card input,.panel-card textarea{
+  width:100%;padding:12px;margin:8px 0;
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:9px;color:white;
+}
+.panel-card button{margin:5px}
+.panel-close{float:right;background:none;border:0;color:white;font-size:22px}
+.muted{color:var(--muted);font-size:13px}
+.danger{background:#8d3434!important}
+@media(max-width:700px){
+  .sidebar{
+    position:fixed;z-index:5;left:0;top:0;bottom:0;
+    transform:translateX(-100%);transition:transform .2s;
+  }
+  .sidebar.open{transform:translateX(0)}
+  #menuButton{display:block}
+  .messages{padding:18px 12px}
+  .composer-wrap{padding:10px}
+}
 </style>
 </head>
+
 <body>
 
-<section id="authPage" class="auth-page">
- <div class="auth-card">
-  <div class="logo">🧠</div>
-  <h1>Nova</h1>
-  <div class="subtitle">Ton assistant intelligent personnel</div>
-  <div id="loginForm">
-   <div class="field"><label>Adresse e-mail</label><input id="loginEmail" type="email" autocomplete="email" placeholder="ton@email.com"></div>
-   <div class="field"><label>Mot de passe</label><input id="loginPassword" type="password" autocomplete="current-password"></div>
-   <button class="primary" id="loginButton">Se connecter</button>
-   <div class="auth-links"><button class="link" id="showSignup">Créer un compte</button><button class="link" id="showReset">Mot de passe oublié ?</button></div>
+<!-- CONNEXION -->
+<section id="authScreen">
+  <div class="auth-card">
+    <div class="logo">Nova 🧠</div>
+    <p>Ton assistante intelligente</p>
+    <input id="authEmail" type="email" placeholder="Adresse e-mail">
+    <input id="authPassword" type="password" placeholder="Mot de passe">
+    <button class="primary" id="loginButton">Se connecter</button>
+    <div class="auth-links">
+      <button id="signupButton">Créer un compte</button>
+      <button id="resetButton">Mot de passe oublié</button>
+    </div>
+    <p id="authStatus" class="muted"></p>
   </div>
-  <div id="signupForm" class="hidden">
-   <div class="field"><label>Adresse e-mail</label><input id="signupEmail" type="email"></div>
-   <div class="field"><label>Mot de passe (6 caractères minimum)</label><input id="signupPassword" type="password"></div>
-   <button class="primary" id="signupButton">Créer mon compte</button>
-   <button class="secondary" id="backLogin1">Retour</button>
-  </div>
-  <div id="resetForm" class="hidden">
-   <div class="field"><label>Adresse e-mail</label><input id="resetEmail" type="email"></div>
-   <button class="primary" id="resetButton">Envoyer le lien</button>
-   <button class="secondary" id="backLogin2">Retour</button>
-  </div>
-  <div id="authMessage"></div>
- </div>
 </section>
 
-<section id="appPage" class="app hidden">
- <aside class="sidebar" id="sidebar">
-  <div class="side-top"><div class="brand">🧠 Nova</div><button class="side-btn" id="collapseSidebar">‹</button></div>
-  <button class="new-chat" id="newChat">＋ Nouveau chat</button>
-  <button class="nav-btn" id="projectsButton">📁 Projets</button>
-  <button class="nav-btn" id="memoryButton">🧠 Mémoire</button>
-  <div class="section-label">RÉCENTS</div>
-  <div class="side-list" id="chatList"></div>
-  <div class="side-bottom">
-   <button class="nav-btn" id="settingsButton">⚙️ Paramètres</button>
-   <div class="user-line" id="userEmail"></div>
-   <button class="nav-btn" id="logoutButton">↪ Déconnexion</button>
-  </div>
- </aside>
- <div class="main">
-  <div class="topbar"><div class="top-left"><button id="openSidebar">☰</button><span class="top-title" id="pageTitle">Nouveau chat</span></div><div class="top-right"><span id="emailLabel" class="small-muted"></span></div></div>
-  <div class="content" id="content">
-   <section id="welcome" class="welcome"><div class="big">🧠</div><h1>Bonjour !</h1><p>Je suis Nova. Que veux-tu faire aujourd'hui ?</p></section>
-   <section id="messages" class="messages"></section>
-   <section id="projectsPanel" class="panel hidden">
-    <h2>📁 Mes projets</h2><p class="small-muted">Tes projets personnels.</p>
-    <input id="projectName" placeholder="Nom du projet">
-    <textarea id="projectDescription" rows="2" placeholder="Description (facultatif)"></textarea>
-    <button id="addProject">＋ Créer un projet</button><div id="projectList"></div>
-   </section>
-   <section id="memoryPanel" class="panel hidden">
-    <h2>🧠 Ma mémoire</h2><p class="small-muted">Nova enregistre certaines informations utiles. Tu peux les supprimer ici.</p><div id="factList"></div>
-   </section>
-   <section id="settingsPanel" class="panel hidden">
+<!-- APPLICATION -->
+<div id="app" class="hidden">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-top">
+      <div class="brand">Nova 🧠</div>
+      <button class="icon-button" id="closeSidebar">×</button>
+    </div>
+
+    <button class="new-chat" id="newChatButton">＋ Nouveau chat</button>
+
+    <div class="side-label">Projets</div>
+    <div class="side-list" id="projectsList"></div>
+    <button class="side-item" id="addProjectButton">＋ Nouveau projet</button>
+
+    <div class="side-label">Récents</div>
+    <div class="side-list" id="chatsList"></div>
+
+    <div class="side-bottom">
+      <button class="side-item" id="memoryButton">🧠 Ma mémoire</button>
+      <button class="side-item" id="settingsButton">⚙️ Paramètres</button>
+      <div class="user-info" id="userEmail"></div>
+      <button class="side-item" id="logoutButton">↪ Déconnexion</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-button" id="menuButton">☰</button>
+      <h2 id="pageTitle">Nouvelle conversation</h2>
+    </header>
+
+    <section class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <h1>Bonjour ! 👋</h1>
+        <p>Je suis Nova. Que veux-tu faire aujourd'hui ?</p>
+      </div>
+    </section>
+
+    <div class="composer-wrap" id="composerWrap">
+      <div class="status" id="status">Nova est prête ❤️</div>
+      <div class="attachment-list" id="attachmentList"></div>
+      <div class="composer">
+        <button class="attach-button" id="attachButton" title="Ajouter un fichier">📎</button>
+        <input id="fileInput" type="file" multiple accept="image/jpeg,image/png,image/webp,.pdf,.docx,.txt" hidden>
+        <textarea id="messageInput" rows="1" placeholder="Écris un message à Nova..."></textarea>
+        <button class="send" id="sendButton">➤</button>
+      </div>
+      <p class="muted" style="text-align:center">Nova peut faire des erreurs. Vérifie les informations importantes.</p>
+    </div>
+  </main>
+</div>
+
+<!-- PARAMÈTRES -->
+<div class="panel hidden" id="settingsPanel">
+  <div class="panel-card">
+    <button class="panel-close" data-close="settingsPanel">×</button>
     <h2>⚙️ Paramètres</h2>
-    <p class="small-muted">Le cerveau de Nova est connecté de manière sécurisée à Supabase.</p>
-    <label>Modèle IA</label><input id="modelInput" value="openai/gpt-oss-20b">
-    <button id="saveSettings">Enregistrer</button><button id="closeSettings">Fermer</button>
-   </section>
+    <label>Modèle IA</label>
+    <input id="modelInput" value="openai/gpt-oss-20b">
+    <p class="muted">Pour analyser les images, Nova utilisera automatiquement son modèle compatible avec la vision.</p>
+    <button class="primary" id="saveSettingsButton">Enregistrer</button>
   </div>
-  <div class="composer-wrap" id="composerWrap">
-   <div class="status" id="status">Nova est prête ❤️</div>
-   <div class="composer"><textarea id="messageInput" rows="1" placeholder="Écris un message à Nova..."></textarea><button class="send" id="sendButton">➤</button></div>
+</div>
+
+<!-- MÉMOIRE -->
+<div class="panel hidden" id="memoryPanel">
+  <div class="panel-card">
+    <button class="panel-close" data-close="memoryPanel">×</button>
+    <h2>🧠 Ma mémoire</h2>
+    <p class="muted">Nova enregistre automatiquement certaines informations que tu lui communiques.</p>
+    <div id="memoryContent"></div>
+    <button class="danger" id="clearMemoryButton">Effacer ma mémoire</button>
   </div>
- </div>
-</section>
+</div>
+
+<!-- PROJET -->
+<div class="panel hidden" id="projectPanel">
+  <div class="panel-card">
+    <button class="panel-close" data-close="projectPanel">×</button>
+    <h2>Nouveau projet</h2>
+    <input id="projectName" placeholder="Nom du projet">
+    <textarea id="projectDescription" placeholder="Description (facultatif)"></textarea>
+    <button class="primary" id="saveProjectButton">Créer le projet</button>
+  </div>
+</div>
 
 <script>
-"use strict";
+/* CONFIGURATION */
+const SUPABASE_URL = "https://yvkldxqrgnigxesoxycc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_DwDUh-Le_xR6mJnojXdL5w_QI-00AZT";
+const EDGE_URL = SUPABASE_URL + "/functions/v1/smooth-endpoint";
 
-const SUPABASE_URL="https://yvkldxqrgnigxesoxycc.supabase.co";
-const SUPABASE_KEY="sb_publishable_DwDUh-Le_xR6mJnojXdL5w_QI-00AZT";
-const EDGE_URL=SUPABASE_URL+"/functions/v1/smooth-endpoint";
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let user=null,chats=[],currentChat=null,messages=[],facts=[],projects=[],busy=false,loadedUserId=null,loadingUserId=null;
-const $=id=>document.getElementById(id);
-
-function notice(id,message){$(id).textContent=message||""}
-function showForm(name){
- ["loginForm","signupForm","resetForm"].forEach(id=>$(id).classList.toggle("hidden",id!==name));
- notice("authMessage","");
+if(window.pdfjsLib){
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 }
-function showApplication(){
- $("authPage").classList.add("hidden");$("appPage").classList.remove("hidden");
- $("userEmail").textContent=user?.email||"Compte personnel";$("emailLabel").textContent=user?.email||"";
+
+/* ÉTAT */
+let user = null;
+let chats = [];
+let currentChat = null;
+let messages = [];
+let facts = [];
+let projects = [];
+let busy = false;
+let pendingAttachments = [];
+
+const $ = id => document.getElementById(id);
+
+/* AUTHENTIFICATION */
+async function login(){
+  const email = $("authEmail").value.trim();
+  const password = $("authPassword").value;
+
+  if(!email || !password){
+    $("authStatus").textContent = "Remplis les deux champs.";
+    return;
+  }
+
+  $("authStatus").textContent = "Connexion...";
+  const {error} = await db.auth.signInWithPassword({email,password});
+
+  if(error) $("authStatus").textContent = error.message;
 }
-function showAuthentication(){$("appPage").classList.add("hidden");$("authPage").classList.remove("hidden")}
 
-$("showSignup").onclick=()=>showForm("signupForm");
-$("showReset").onclick=()=>showForm("resetForm");
-$("backLogin1").onclick=()=>showForm("loginForm");
-$("backLogin2").onclick=()=>showForm("loginForm");
+async function signup(){
+  const email = $("authEmail").value.trim();
+  const password = $("authPassword").value;
 
-$("signupButton").onclick=async()=>{
- const email=$("signupEmail").value.trim(),password=$("signupPassword").value;
- if(!email||password.length<6)return notice("authMessage","Entre un e-mail valide et un mot de passe d'au moins 6 caractères.");
- $("signupButton").disabled=true;
- try{
-  const {data,error}=await db.auth.signUp({email,password});
-  if(error)throw error;
-  showForm("loginForm");
-  notice("authMessage",data.session?"Compte créé !":"Compte créé ! Consulte tes e-mails pour confirmer ton adresse.");
- }catch(e){notice("authMessage",e.message)}
- finally{$("signupButton").disabled=false}
-};
+  if(!email || !password){
+    $("authStatus").textContent = "Remplis les deux champs.";
+    return;
+  }
 
-$("loginButton").onclick=async()=>{
- const email=$("loginEmail").value.trim(),password=$("loginPassword").value;
- if(!email||!password)return notice("authMessage","Entre ton e-mail et ton mot de passe.");
- $("loginButton").disabled=true;
- try{const {error}=await db.auth.signInWithPassword({email,password});if(error)throw error}
- catch(e){notice("authMessage",e.message)}
- finally{$("loginButton").disabled=false}
-};
+  if(password.length < 6){
+    $("authStatus").textContent = "Le mot de passe doit contenir au moins 6 caractères.";
+    return;
+  }
 
-$("resetButton").onclick=async()=>{
- const email=$("resetEmail").value.trim();
- if(!email)return notice("authMessage","Entre ton adresse e-mail.");
- try{
-  const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
-  if(error)throw error;
-  notice("authMessage","Si un compte correspond à cette adresse, un lien sera envoyé.");
- }catch(e){notice("authMessage",e.message)}
-};
+  $("authStatus").textContent = "Création du compte...";
+  const {error} = await db.auth.signUp({email,password});
 
-$("logoutButton").onclick=async()=>{const {error}=await db.auth.signOut();if(error)alert(error.message)};
-
-async function handleSession(session){
- const nextUser=session?.user||null;
- if(!nextUser){
-  user=null;loadedUserId=null;loadingUserId=null;chats=[];messages=[];facts=[];projects=[];currentChat=null;
-  $("chatList").innerHTML="";$("messages").innerHTML="";showAuthentication();return;
- }
- user=nextUser;showApplication();
- if(loadedUserId===user.id||loadingUserId===user.id)return;
- loadingUserId=user.id;
- try{await loadAll();loadedUserId=user.id}
- catch(e){console.error(e);alert("Impossible de charger tes données : "+e.message)}
- finally{loadingUserId=null}
+  $("authStatus").textContent = error
+    ? error.message
+    : "Compte créé ! Vérifie tes e-mails si une confirmation est demandée.";
 }
-db.auth.onAuthStateChange((event,session)=>{void handleSession(session)});
 
-function settings(){
- try{return JSON.parse(localStorage.getItem("nova_settings"))||{}}
- catch{return {}}
+async function resetPassword(){
+  const email = $("authEmail").value.trim();
+
+  if(!email){
+    $("authStatus").textContent = "Entre d'abord ton adresse e-mail.";
+    return;
+  }
+
+  const {error} = await db.auth.resetPasswordForEmail(email,{
+    redirectTo:location.origin + location.pathname
+  });
+
+  $("authStatus").textContent = error
+    ? error.message
+    : "E-mail de réinitialisation envoyé.";
 }
-$("settingsButton").onclick=()=>{
- closePanels();$("modelInput").value=settings().model||"openai/gpt-oss-20b";
- $("settingsPanel").classList.remove("hidden");$("pageTitle").textContent="Paramètres";
-};
-$("saveSettings").onclick=()=>{
- localStorage.setItem("nova_settings",JSON.stringify({model:$("modelInput").value.trim()||"openai/gpt-oss-20b"}));
- alert("Réglages enregistrés !");
-};
-$("closeSettings").onclick=()=>{closePanels();$("pageTitle").textContent=currentChat?.title||"Nouveau chat"};
 
-$("collapseSidebar").onclick=()=>$("sidebar").classList.add("collapsed");
-$("openSidebar").onclick=()=>$("sidebar").classList.toggle("collapsed");
-
-function closePanels(){
- ["projectsPanel","memoryPanel","settingsPanel"].forEach(id=>$(id).classList.add("hidden"));
- $("messages").classList.remove("hidden");$("composerWrap").classList.remove("hidden");
- $("welcome").classList.toggle("hidden",messages.length>0);
+async function logout(){
+  await db.auth.signOut();
+  location.reload();
 }
-function showPage(panel,title){
- ["projectsPanel","memoryPanel","settingsPanel"].forEach(id=>$(id).classList.add("hidden"));
- $("messages").classList.add("hidden");$("welcome").classList.add("hidden");
- $(panel).classList.remove("hidden");$("composerWrap").classList.add("hidden");$("pageTitle").textContent=title;
-}
-$("projectsButton").onclick=()=>{showPage("projectsPanel","Mes projets");renderProjects()};
-$("memoryButton").onclick=()=>{showPage("memoryPanel","Ma mémoire");renderFacts()};
 
+async function initialize(){
+  const {data,error} = await db.auth.getSession();
+
+  if(error){
+    $("authStatus").textContent = error.message;
+    return;
+  }
+
+  if(data.session){
+    await startApp(data.session.user);
+  }
+}
+
+async function startApp(currentUser){
+  user = currentUser;
+  $("authScreen").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  $("userEmail").textContent = user.email || "";
+
+  await Promise.all([
+    loadChats(),
+    loadFacts(),
+    loadProjects()
+  ]);
+
+  if(chats.length){
+    await openChat(chats[0].id);
+  }else{
+    showWelcome();
+  }
+}
+
+db.auth.onAuthStateChange(async(event,session)=>{
+  if(event === "SIGNED_IN" && session?.user && !user){
+    await startApp(session.user);
+  }
+});
+
+/* AFFICHAGE DES MESSAGES */
+function showWelcome(){
+  currentChat = null;
+  messages = [];
+  $("pageTitle").textContent = "Nouvelle conversation";
+  $("messages").innerHTML = `
+    <div class="welcome" id="welcome">
+      <h1>Bonjour ! 👋</h1>
+      <p>Je suis Nova. Que veux-tu faire aujourd'hui ?</p>
+    </div>`;
+  renderChats();
+}
+
+function addMessage(role,content){
+  const welcome = $("welcome");
+  if(welcome) welcome.remove();
+
+  messages.push({role,content});
+  renderMessage(role,content);
+}
+
+function renderMessage(role,content){
+  const wrapper = document.createElement("div");
+  wrapper.className = "message " + role;
+
+  const avatar = document.createElement("div");
+  avatar.className = "avatar";
+  avatar.textContent = role === "user" ? "👤" : "🧠";
+
+  const body = document.createElement("div");
+  body.className = "message-content";
+  body.textContent = content;
+
+  wrapper.append(avatar,body);
+  $("messages").appendChild(wrapper);
+  $("messages").scrollTop = $("messages").scrollHeight;
+}
+
+function renderAllMessages(){
+  $("messages").innerHTML = "";
+
+  if(!messages.length){
+    $("messages").innerHTML = `
+      <div class="welcome" id="welcome">
+        <h1>Bonjour ! 👋</h1>
+        <p>Je suis Nova. Que veux-tu faire aujourd'hui ?</p>
+      </div>`;
+    return;
+  }
+
+  messages.forEach(m=>renderMessage(m.role,m.content));
+}
+
+/* CONVERSATIONS */
 async function loadChats(){
- const {data,error}=await db.from("nova_chats").select("*").eq("user_id",user.id).order("updated_at",{ascending:false});
- if(error)throw error;chats=data||[];renderChats();
+  const {data,error} = await db.from("nova_chats")
+    .select("*")
+    .eq("user_id",user.id)
+    .order("updated_at",{ascending:false});
+
+  if(error) throw error;
+
+  chats = data || [];
+  renderChats();
 }
+
 function renderChats(){
- $("chatList").innerHTML="";
- chats.forEach(chat=>{
-  const row=document.createElement("div");row.className="chat-item"+(currentChat?.id===chat.id?" active":"");
-  const title=document.createElement("span");title.className="chat-title";title.textContent="💬 "+chat.title;title.onclick=()=>openChat(chat.id);
-  const del=document.createElement("button");del.className="delete-chat";del.textContent="×";del.title="Supprimer";del.onclick=e=>{e.stopPropagation();void deleteChat(chat.id)};
-  row.append(title,del);$("chatList").appendChild(row);
- });
+  $("chatsList").innerHTML = "";
+
+  chats.forEach(chat=>{
+    const button = document.createElement("button");
+    button.className = "side-item" +
+      (currentChat?.id === chat.id ? " active" : "");
+    button.textContent = "💬 " + chat.title;
+    button.onclick = ()=>openChat(chat.id);
+    $("chatsList").appendChild(button);
+  });
 }
 
 async function createChat(){
- if(!user?.id)throw new Error("Tu dois être connecté.");
- const {data,error}=await db.from("nova_chats").insert({user_id:user.id,title:"Nouveau chat"}).select("*").single();
- if(error)throw new Error("Création du chat impossible : "+error.message);
- if(!data?.id)throw new Error("Identifiant du chat manquant.");
- currentChat=data;messages=[];renderMessages();closePanels();$("welcome").classList.remove("hidden");$("pageTitle").textContent="Nouveau chat";renderChats();return data;
-}
-$("newChat").onclick=async()=>{if(busy)return;try{await createChat()}catch(e){alert(e.message)}};
+  const {data,error} = await db.from("nova_chats")
+    .insert({
+      user_id:user.id,
+      title:"Nouvelle conversation"
+    })
+    .select()
+    .single();
 
-async function openChat(id){
- if(!user?.id||!id)return;
- const chat=chats.find(c=>c.id===id);if(!chat)return;
- currentChat=chat;messages=[];closePanels();$("pageTitle").textContent=chat.title;renderChats();
- const {data,error}=await db.from("nova_messages").select("*").eq("chat_id",id).eq("user_id",user.id).order("created_at",{ascending:true});
- if(error){alert("Impossible de charger les messages : "+error.message);return}
- messages=data||[];renderMessages();
+  if(error) throw error;
+
+  currentChat = data;
+  messages = [];
+  await loadChats();
+  showWelcome();
+  currentChat = data;
+  $("pageTitle").textContent = data.title;
+  return data;
 }
-async function deleteChat(id){
- if(!confirm("Supprimer cette conversation et ses messages ?"))return;
- const {error}=await db.from("nova_chats").delete().eq("id",id).eq("user_id",user.id);
- if(error){alert(error.message);return}
- if(currentChat?.id===id){currentChat=null;messages=[];renderMessages();$("welcome").classList.remove("hidden");$("pageTitle").textContent="Nouveau chat"}
- await loadChats();
+
+async function openChat(chatId){
+  const selected = chats.find(c=>c.id === chatId);
+  if(!selected) return;
+
+  currentChat = selected;
+  $("pageTitle").textContent = selected.title;
+  $("status").textContent = "Chargement...";
+
+  const {data,error} = await db.from("nova_messages")
+    .select("*")
+    .eq("chat_id",chatId)
+    .eq("user_id",user.id)
+    .order("created_at",{ascending:true});
+
+  if(error){
+    $("status").textContent = "Erreur de chargement";
+    console.error(error);
+    return;
+  }
+
+  messages = (data || []).map(m=>({
+    role:m.role,
+    content:m.content
+  }));
+
+  renderAllMessages();
+  renderChats();
+  $("status").textContent = "Nova est prête ❤️";
+  $("sidebar").classList.remove("open");
 }
-function renderMessages(){
- $("messages").innerHTML="";
- messages.forEach(m=>addMessage(m.role,m.content,false));
- $("welcome").classList.toggle("hidden",messages.length>0);
-}
-function addMessage(role,content,scroll=true){
- $("welcome").classList.add("hidden");
- const div=document.createElement("div");div.className="message "+(role==="user"?"user":"assistant");
- const label=document.createElement("div");label.className="message-label";label.textContent=role==="user"?"Toi":"Nova";
- const body=document.createElement("div");body.textContent=content;
- div.append(label,body);$("messages").appendChild(div);
- if(scroll)$("content").scrollTop=$("content").scrollHeight;
-}
+
 async function saveMessage(role,content){
- if(!user?.id||!currentChat?.id)throw new Error("Aucun chat actif.");
- const {data,error}=await db.from("nova_messages").insert({chat_id:currentChat.id,user_id:user.id,role,content}).select("*").single();
- if(error)throw new Error("Enregistrement du message impossible : "+error.message);
- messages.push(data);return data;
+  if(!currentChat?.id) throw new Error("Aucune conversation active.");
+
+  const {error} = await db.from("nova_messages").insert({
+    chat_id:currentChat.id,
+    user_id:user.id,
+    role,
+    content
+  });
+
+  if(error) throw error;
 }
 
-/* MEMOIRE */
+/* MÉMOIRE AUTOMATIQUE */
 async function loadFacts(){
- const {data,error}=await db.from("nova_facts").select("id,content,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(100);
- if(error)throw error;facts=data||[];
+  const {data,error} = await db.from("nova_facts")
+    .select("*")
+    .eq("user_id",user.id)
+    .order("created_at",{ascending:false});
+
+  if(error) throw error;
+  facts = data || [];
 }
-async function saveFact(content){
- if(!user?.id||!content?.trim())return;
- if(facts.some(f=>f.content.toLowerCase()===content.toLowerCase()))return;
- const {data,error}=await db.from("nova_facts").insert({user_id:user.id,content:content.trim()}).select("*").single();
- if(error){console.error("Erreur mémoire",error);return}
- if(data)facts.unshift(data);
-}
-async function deleteFact(id){
- const {error}=await db.from("nova_facts").delete().eq("id",id).eq("user_id",user.id);
- if(error){alert(error.message);return}
- facts=facts.filter(f=>f.id!==id);renderFacts();
-}
-async function forgetAllFacts(){
- if(!confirm("Supprimer tous tes souvenirs personnels ?"))return;
- const {error}=await db.from("nova_facts").delete().eq("user_id",user.id);
- if(error){alert(error.message);return}facts=[];renderFacts();
-}
-function renderFacts(){
- $("factList").innerHTML="";
- if(!facts.length)$("factList").textContent="Aucun souvenir enregistré pour le moment.";
- facts.forEach(f=>{
-  const row=document.createElement("div");row.className="item-row";
-  const text=document.createElement("span");text.textContent=f.content;
-  const del=document.createElement("button");del.textContent="Supprimer";del.onclick=()=>deleteFact(f.id);
-  row.append(text,del);$("factList").appendChild(row);
- });
- const clear=document.createElement("button");clear.textContent="Effacer tous mes souvenirs";clear.onclick=forgetAllFacts;$("factList").appendChild(clear);
-}
+
 async function automaticMemory(text){
- const t=text.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
- if(/mot de passe|password|cle api|api key|numero de carte|carte bancaire|code secret|adresse exacte/.test(t))return;
- const patterns=[
-  /^je m'appelle .+/,/^j'aime .+/,/^j'adore .+/,/^je prefere .+/,/^je deteste .+/,
-  /^mon animal prefere est .+/,/^ma couleur preferee est .+/,/^mon plat prefere est .+/,
-  /^je suis passionne par .+/,/^je travaille sur .+/,/^mon projet est .+/
- ];
- if(patterns.some(p=>p.test(t))){await saveFact(text);renderFacts()}
+  const patterns = [
+    /je m'appelle ([^.!?\n]+)/i,
+    /mon animal préféré est ([^.!?\n]+)/i,
+    /mon anniversaire est ([^.!?\n]+)/i,
+    /j'aime ([^.!?\n]+)/i,
+    /j'adore ([^.!?\n]+)/i,
+    /je préfère ([^.!?\n]+)/i,
+    /mon objectif est ([^.!?\n]+)/i
+  ];
+
+  for(const pattern of patterns){
+    const match = text.match(pattern);
+
+    if(match){
+      const content = match[0].trim();
+
+      const exists = facts.some(f=>
+        f.content.toLowerCase() === content.toLowerCase()
+      );
+
+      if(!exists){
+        const {data,error} = await db.from("nova_facts")
+          .insert({user_id:user.id,content})
+          .select()
+          .single();
+
+        if(!error && data) facts.unshift(data);
+      }
+    }
+  }
+}
+
+function renderMemory(){
+  $("memoryContent").innerHTML = "";
+
+  if(!facts.length){
+    $("memoryContent").textContent = "Aucun souvenir enregistré pour le moment.";
+    return;
+  }
+
+  facts.forEach(f=>{
+    const item = document.createElement("p");
+    item.textContent = "• " + f.content;
+    $("memoryContent").appendChild(item);
+  });
+}
+
+async function clearMemory(){
+  if(!confirm("Effacer tous les souvenirs de Nova ?")) return;
+
+  const {error} = await db.from("nova_facts")
+    .delete()
+    .eq("user_id",user.id);
+
+  if(error){
+    alert(error.message);
+    return;
+  }
+
+  facts = [];
+  renderMemory();
 }
 
 /* PROJETS */
 async function loadProjects(){
- const {data,error}=await db.from("nova_projects").select("*").eq("user_id",user.id).order("created_at",{ascending:false});
- if(error)throw error;projects=data||[];renderProjects();
+  const {data,error} = await db.from("nova_projects")
+    .select("*")
+    .eq("user_id",user.id)
+    .order("created_at",{ascending:false});
+
+  if(error) throw error;
+  projects = data || [];
+  renderProjects();
 }
+
 function renderProjects(){
- $("projectList").innerHTML="";
- if(!projects.length)$("projectList").textContent="Aucun projet pour le moment.";
- projects.forEach(p=>{
-  const row=document.createElement("div");row.className="item-row";
-  const info=document.createElement("span");info.textContent=p.name+(p.description?" — "+p.description:"");
-  const del=document.createElement("button");del.textContent="Supprimer";del.onclick=()=>deleteProject(p.id);
-  row.append(info,del);$("projectList").appendChild(row);
- });
-}
-$("addProject").onclick=async()=>{
- const name=$("projectName").value.trim(),description=$("projectDescription").value.trim();
- if(!name)return alert("Donne un nom à ton projet.");
- $("addProject").disabled=true;
- try{
-  const {error}=await db.from("nova_projects").insert({user_id:user.id,name,description});
-  if(error)throw error;
-  $("projectName").value="";$("projectDescription").value="";await loadProjects();
- }catch(e){alert(e.message)}finally{$("addProject").disabled=false}
-};
-async function deleteProject(id){
- if(!confirm("Supprimer ce projet ?"))return;
- const {error}=await db.from("nova_projects").delete().eq("id",id).eq("user_id",user.id);
- if(error){alert(error.message);return}await loadProjects();
+  $("projectsList").innerHTML = "";
+
+  projects.forEach(project=>{
+    const button = document.createElement("button");
+    button.className = "side-item";
+    button.textContent = "📁 " + project.name;
+    button.title = project.description || "";
+    button.onclick = ()=>{
+      $("messageInput").value =
+        "Je veux travailler sur le projet : " + project.name +
+        (project.description ? ". " + project.description : "");
+      $("messageInput").focus();
+    };
+    $("projectsList").appendChild(button);
+  });
 }
 
-/* CONNEXION AU CERVEAU GROQ SUR SUPABASE */
-async function askNova(){
- if(!user?.id)throw new Error("Tu dois être connecté.");
- const sessionResult=await db.auth.getSession();
- const accessToken=sessionResult.data?.session?.access_token;
- if(sessionResult.error)throw sessionResult.error;
- if(!accessToken)throw new Error("Ta session a expiré. Reconnecte-toi.");
+async function saveProject(){
+  const name = $("projectName").value.trim();
+  const description = $("projectDescription").value.trim();
 
- const memory=facts.map(f=>"- "+f.content).join("\n");
- const system=`Tu es Nova, une assistante intelligente, chaleureuse et honnête.
+  if(!name){
+    alert("Donne un nom au projet.");
+    return;
+  }
+
+  const {error} = await db.from("nova_projects").insert({
+    user_id:user.id,
+    name,
+    description
+  });
+
+  if(error){
+    alert(error.message);
+    return;
+  }
+
+  $("projectName").value = "";
+  $("projectDescription").value = "";
+  $("projectPanel").classList.add("hidden");
+  await loadProjects();
+}
+
+/* FICHIERS JOINTS */
+function formatSize(size){
+  return size < 1024*1024
+    ? Math.round(size/1024) + " Ko"
+    : (size/(1024*1024)).toFixed(1) + " Mo";
+}
+
+async function extractPdf(file){
+  if(!window.pdfjsLib) throw new Error("Le lecteur PDF n'est pas chargé.");
+
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data:buffer}).promise;
+  let result = "";
+
+  const maxPages = Math.min(pdf.numPages,15);
+
+  for(let pageNumber=1;pageNumber<=maxPages;pageNumber++){
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+    const text = content.items
+      .map(item=>item.str || "")
+      .join(" ");
+
+    result += "\n" + text;
+
+    if(result.length > 30000) break;
+  }
+
+  if(!result.trim()){
+    return "[Ce PDF ne contient pas de texte extractible. Il est peut-être scanné.]";
+  }
+
+  return result.slice(0,30000);
+}
+
+async function readAttachment(file){
+  const name = file.name;
+  const extension = name.split(".").pop().toLowerCase();
+
+  if(file.size > 8*1024*1024){
+    throw new Error(name + " dépasse la limite de 8 Mo.");
+  }
+
+  if(["jpg","jpeg","png","webp"].includes(extension)){
+    if(!file.type.startsWith("image/")){
+      throw new Error("Format d'image non reconnu : " + name);
+    }
+
+    const dataUrl = await new Promise((resolve,reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>resolve(reader.result);
+      reader.onerror = ()=>reject(new Error("Impossible de lire " + name));
+      reader.readAsDataURL(file);
+    });
+
+    return {name,type:"image",dataUrl};
+  }
+
+  if(extension === "pdf"){
+    return {name,type:"document",text:await extractPdf(file)};
+  }
+
+  if(extension === "docx"){
+    if(!window.mammoth) throw new Error("Le lecteur Word n'est pas chargé.");
+
+    const result = await mammoth.extractRawText({
+      arrayBuffer:await file.arrayBuffer()
+    });
+
+    return {
+      name,
+      type:"document",
+      text:(result.value || "").slice(0,30000)
+    };
+  }
+
+  if(extension === "txt"){
+    return {
+      name,
+      type:"document",
+      text:(await file.text()).slice(0,30000)
+    };
+  }
+
+  throw new Error("Format non accepté : " + name);
+}
+
+function renderAttachments(){
+  $("attachmentList").innerHTML = "";
+
+  pendingAttachments.forEach((file,index)=>{
+    const chip = document.createElement("div");
+    chip.className = "attachment-chip";
+
+    const label = document.createElement("span");
+    label.textContent =
+      (file.type === "image" ? "🖼️ " : "📄 ") + file.name;
+
+    const remove = document.createElement("button");
+    remove.textContent = "×";
+    remove.title = "Retirer";
+    remove.onclick = ()=>{
+      pendingAttachments.splice(index,1);
+      renderAttachments();
+    };
+
+    chip.append(label,remove);
+    $("attachmentList").appendChild(chip);
+  });
+}
+
+async function handleFiles(fileList){
+  const files = Array.from(fileList);
+
+  for(const file of files){
+    try{
+      const extension = file.name.split(".").pop().toLowerCase();
+
+      if(["jpg","jpeg","png","webp"].includes(extension)){
+        const imageCount = pendingAttachments.filter(a=>a.type==="image").length;
+
+        if(imageCount >= 3){
+          alert("Tu peux joindre au maximum 3 images.");
+          continue;
+        }
+      }
+
+      const attachment = await readAttachment(file);
+      pendingAttachments.push(attachment);
+      renderAttachments();
+
+    }catch(error){
+      alert(error.message);
+    }
+  }
+
+  $("fileInput").value = "";
+}
+
+/* APPEL À NOVA */
+function getSettings(){
+  return {
+    model:localStorage.getItem("nova_model") || "openai/gpt-oss-20b"
+  };
+}
+
+async function askNova(userPrompt,attachments=[]){
+  if(!user?.id) throw new Error("Tu dois être connecté.");
+
+  const sessionResult = await db.auth.getSession();
+  const accessToken = sessionResult.data?.session?.access_token;
+
+  if(sessionResult.error) throw sessionResult.error;
+  if(!accessToken) throw new Error("Ta session a expiré. Reconnecte-toi.");
+
+  const memory = facts.map(f=>"- "+f.content).join("\n");
+
+  const system = `Tu es Nova, une assistante intelligente, chaleureuse et honnête.
 Tu réponds en français par défaut.
+Tu aides l'utilisateur dans ses projets, ses études et ses questions.
+Tu peux utiliser les résultats de recherche Internet et la météo fournis par tes outils.
 Utilise les souvenirs ci-dessous pour personnaliser tes réponses.
+Tu peux analyser les images envoyées et lire le texte extrait des documents.
+Si un document est incomplet ou illisible, explique-le honnêtement.
 Ne prétends jamais avoir enregistré quelque chose si ce n'est pas vrai.
 Ne révèle jamais les données d'un autre utilisateur.
 
 Souvenirs personnels :
-${memory||"Aucun souvenir enregistré."}`;
+${memory || "Aucun souvenir enregistré."}`;
 
- const history=messages.slice(-30).map(m=>({role:m.role,content:m.content}));
- const model=settings().model||"openai/gpt-oss-20b";
+  const history = messages.slice(-30).map(m=>({
+    role:m.role,
+    content:m.content
+  }));
 
- const response=await fetch(EDGE_URL,{
-  method:"POST",
-  headers:{
-   "Content-Type":"application/json",
-   "apikey":SUPABASE_KEY,
-   "Authorization":"Bearer "+accessToken
-  },
-  body:JSON.stringify({
-   model,
-   messages:[{role:"system",content:system},...history]
-  })
- });
+  if(!history.length) throw new Error("Aucun message à envoyer.");
 
- let data;
- try{data=await response.json()}catch{throw new Error("Réponse invalide du serveur Nova.")}
- if(!response.ok)throw new Error(data.error||"Erreur du serveur Nova : "+response.status);
- const answer=data.choices?.[0]?.message?.content;
- if(!answer)throw new Error("Nova n'a pas reçu de réponse de Groq.");
- return answer;
+  const imageAttachments = attachments.filter(a=>a.type==="image");
+  const documentAttachments = attachments.filter(a=>a.type==="document");
+
+  const documentText = documentAttachments.map(file=>
+    "\n\nContenu du fichier " + file.name + " :\n" + file.text
+  ).join("\n");
+
+  const finalPrompt = userPrompt + documentText;
+
+  const lastUserIndex = history.length - 1;
+
+  if(imageAttachments.length){
+    const parts = [
+      {type:"text",text:finalPrompt || "Analyse cette image et décris-la."}
+    ];
+
+    imageAttachments.forEach(file=>{
+      parts.push({
+        type:"image_url",
+        image_url:{url:file.dataUrl}
+      });
+    });
+
+    history[lastUserIndex].content = parts;
+  }else{
+    history[lastUserIndex].content = finalPrompt;
+  }
+
+  const model = imageAttachments.length
+    ? "qwen/qwen3.8-27b"
+    : getSettings().model;
+
+  const response = await fetch(EDGE_URL,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey":SUPABASE_KEY,
+      "Authorization":"Bearer " + accessToken
+    },
+    body:JSON.stringify({
+      model,
+      messages:[
+        {role:"system",content:system},
+        ...history
+      ]
+    })
+  });
+
+  let data;
+
+  try{
+    data = await response.json();
+  }catch{
+    throw new Error("Réponse invalide du serveur Nova.");
+  }
+
+  if(!response.ok){
+    throw new Error(
+      data.error || "Erreur du serveur Nova : " + response.status
+    );
+  }
+
+  const answer = data.choices?.[0]?.message?.content;
+
+  if(!answer) throw new Error("Nova n'a pas reçu de réponse de Groq.");
+
+  return answer;
 }
 
 /* ENVOI */
 async function sendMessage(){
- if(busy||!user?.id)return;
- const text=$("messageInput").value.trim();if(!text)return;
- busy=true;$("sendButton").disabled=true;$("messageInput").value="";
- $("status").textContent="Nova réfléchit...";closePanels();
- try{
-  if(!currentChat?.id)await createChat();
-  const activeChatId=currentChat.id;
-  addMessage("user",text);
-  await saveMessage("user",text);
-  await automaticMemory(text);
-  if(messages.length===1){
-   const title=text.length>36?text.slice(0,36)+"…":text;
-   const {error}=await db.from("nova_chats").update({title,updated_at:new Date().toISOString()}).eq("id",activeChatId).eq("user_id",user.id);
-   if(error)throw error;
-   currentChat.title=title;$("pageTitle").textContent=title;await loadChats();
+  if(busy || !user?.id) return;
+
+  const text = $("messageInput").value.trim();
+  const attachments = [...pendingAttachments];
+
+  if(!text && !attachments.length) return;
+
+  busy = true;
+  $("sendButton").disabled = true;
+  $("attachButton").disabled = true;
+  $("messageInput").value = "";
+  pendingAttachments = [];
+  renderAttachments();
+
+  $("status").textContent = "Nova réfléchit...";
+  $("sidebar").classList.remove("open");
+
+  const fileNames = attachments.map(a=>"📎 " + a.name).join("\n");
+  const visibleMessage = [text,fileNames].filter(Boolean).join("\n");
+
+  try{
+    if(!currentChat?.id) await createChat();
+
+    const activeChatId = currentChat.id;
+
+    addMessage("user",visibleMessage);
+    await saveMessage("user",visibleMessage);
+
+    if(text) await automaticMemory(text);
+
+    if(messages.length === 1){
+      const titleSource = text || attachments[0].name;
+      const title = titleSource.length > 36
+        ? titleSource.slice(0,36) + "…"
+        : titleSource;
+
+      const {error} = await db.from("nova_chats")
+        .update({
+          title,
+          updated_at:new Date().toISOString()
+        })
+        .eq("id",activeChatId)
+        .eq("user_id",user.id);
+
+      if(error) throw error;
+
+      currentChat.title = title;
+      $("pageTitle").textContent = title;
+      await loadChats();
+    }
+
+    const answer = await askNova(text,attachments);
+
+    if(currentChat?.id !== activeChatId){
+      throw new Error("La conversation active a changé. Réessaie.");
+    }
+
+    addMessage("assistant",answer);
+    await saveMessage("assistant",answer);
+
+    const {error:updateError} = await db.from("nova_chats")
+      .update({updated_at:new Date().toISOString()})
+      .eq("id",activeChatId)
+      .eq("user_id",user.id);
+
+    if(updateError) console.error(updateError);
+
+    await loadChats();
+
+  }catch(error){
+    console.error("Erreur Nova :",error);
+    addMessage("assistant","Oups ! " + error.message);
+
+  }finally{
+    $("status").textContent = "Nova est prête ❤️";
+    busy = false;
+    $("sendButton").disabled = false;
+    $("attachButton").disabled = false;
+    $("messageInput").focus();
   }
-  const answer=await askNova();
-  if(currentChat?.id!==activeChatId)throw new Error("La conversation active a changé. Réessaie.");
-  addMessage("assistant",answer);
-  await saveMessage("assistant",answer);
-  const {error:updateError}=await db.from("nova_chats").update({updated_at:new Date().toISOString()}).eq("id",activeChatId).eq("user_id",user.id);
-  if(updateError)console.error(updateError);
-  await loadChats();
- }catch(e){console.error("Erreur Nova :",e);addMessage("assistant","Oups ! "+e.message)}
- finally{$("status").textContent="Nova est prête ❤️";busy=false;$("sendButton").disabled=false;$("messageInput").focus()}
 }
-$("sendButton").onclick=sendMessage;
-$("messageInput").addEventListener("keydown",e=>{
- if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}
+
+/* INTERFACE */
+$("loginButton").onclick = login;
+$("signupButton").onclick = signup;
+$("resetButton").onclick = resetPassword;
+$("logoutButton").onclick = logout;
+
+$("newChatButton").onclick = async()=>{
+  try{
+    await createChat();
+    $("sidebar").classList.remove("open");
+  }catch(error){
+    alert(error.message);
+  }
+};
+
+$("sendButton").onclick = sendMessage;
+
+$("messageInput").addEventListener("keydown",event=>{
+  if(event.key === "Enter" && !event.shiftKey){
+    event.preventDefault();
+    sendMessage();
+  }
 });
 
-/* CHARGEMENT INITIAL */
-async function loadAll(){
- if(!user?.id)return;
- currentChat=null;messages=[];chats=[];facts=[];projects=[];
- $("messages").innerHTML="";$("chatList").innerHTML="";
- $("welcome").classList.remove("hidden");$("pageTitle").textContent="Nouveau chat";
- await Promise.all([loadChats(),loadFacts(),loadProjects()]);
- if(chats.length)await openChat(chats[0].id);
- else{currentChat=null;messages=[];$("welcome").classList.remove("hidden");$("pageTitle").textContent="Nouveau chat";renderChats()}
-}
-(async()=>{
- try{
-  const {data,error}=await db.auth.getSession();
-  if(error)throw error;
-  await handleSession(data.session);
- }catch(e){console.error(e);notice("authMessage","Erreur de démarrage : "+e.message)}
-})();
+$("messageInput").addEventListener("input",()=>{
+  const input = $("messageInput");
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight,160) + "px";
+});
+
+$("attachButton").onclick = ()=>$("fileInput").click();
+
+$("fileInput").addEventListener("change",event=>{
+  handleFiles(event.target.files);
+});
+
+$("menuButton").onclick = ()=>$("sidebar").classList.toggle("open");
+$("closeSidebar").onclick = ()=>$("sidebar").classList.remove("open");
+
+$("settingsButton").onclick = ()=>{
+  $("modelInput").value = getSettings().model;
+  $("settingsPanel").classList.remove("hidden");
+};
+
+$("saveSettingsButton").onclick = ()=>{
+  const model = $("modelInput").value.trim();
+
+  if(!model){
+    alert("Entre un nom de modèle.");
+    return;
+  }
+
+  localStorage.setItem("nova_model",model);
+  $("settingsPanel").classList.add("hidden");
+  alert("Paramètres enregistrés !");
+};
+
+$("memoryButton").onclick = ()=>{
+  renderMemory();
+  $("memoryPanel").classList.remove("hidden");
+};
+
+$("clearMemoryButton").onclick = clearMemory;
+
+$("addProjectButton").onclick = ()=>{
+  $("projectPanel").classList.remove("hidden");
+};
+
+$("saveProjectButton").onclick = saveProject;
+
+document.querySelectorAll("[data-close]").forEach(button=>{
+  button.onclick = ()=>{
+    $(button.dataset.close).classList.add("hidden");
+  };
+});
+
+/* DÉMARRAGE */
+initialize().catch(error=>{
+  console.error("Erreur de démarrage :",error);
+  $("authStatus").textContent = error.message;
+});
 </script>
+
 </body>
 </html>
