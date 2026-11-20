@@ -539,10 +539,16 @@ async function openChat(id){
 
   currentChat=id;
   messages=data||[];
-  renderMessages();
+
+  // Garder la liste de toutes les discussions visible
+  $("chatSearch").value="";
   renderChatList();
+
+  renderMessages();
   showView("chat");
+
  }catch(e){
+  console.error("Erreur ouverture discussion :",e);
   toast("Impossible d'ouvrir la discussion : "+errorText(e));
  }
 }
